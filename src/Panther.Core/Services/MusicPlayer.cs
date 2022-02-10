@@ -1,10 +1,11 @@
 ﻿using ManagedBass;
 using Panther.Core.Enums;
+using Panther.Core.Events;
 using Panther.Core.Interfaces;
 
 namespace Panther.Core.Services
 {
-    public class MusicPlayer : IMusicPlayer
+    public sealed class MusicPlayer : IMusicPlayer
     {
         private int _stream;
 
@@ -17,10 +18,12 @@ namespace Panther.Core.Services
         }
 
         public string FileName { get; private set; } = "";
-        public PlayerStatus Status { get; private set; }
+        public PlayerStatus Status { get; private set; } = PlayerStatus.Null;
         public long TrackLength { get => Bass.ChannelGetLength(_stream); }
         public long TrackPosition { get => Bass.ChannelGetPosition(_stream); }
         public float Volume { get; set; }
+
+        public event EventHandler<PlayerStatusChangedEventArgs>? StatusChanged;
 
         public void Load(string fileName)
         {
@@ -31,24 +34,32 @@ namespace Panther.Core.Services
 
             FileName = fileName;
             _stream = Bass.CreateStream(FileName);
+            ChangeStatus(PlayerStatus.Stopped);
         }
 
         public void Pause()
         {
             Bass.ChannelPause(_stream);
-            Status = PlayerStatus.Paused;
+            ChangeStatus(PlayerStatus.Paused);
         }
 
         public void Play()
         {
             Bass.ChannelPlay(_stream);
-            Status = PlayerStatus.Playing;
+            ChangeStatus(PlayerStatus.Playing);
         }
 
         public void Stop()
         {
             Bass.ChannelStop(_stream);
-            Status = PlayerStatus.Stopped;
+            ChangeStatus(PlayerStatus.Stopped);
+        }
+
+        private void ChangeStatus(PlayerStatus targetStatus)
+        {
+            var data = new PlayerStatusChangedEventArgs(Status, targetStatus);
+            Status = targetStatus;
+            StatusChanged?.Invoke(this, data);
         }
     }
 }

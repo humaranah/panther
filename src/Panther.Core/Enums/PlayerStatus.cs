@@ -2,6 +2,7 @@
 {
     public enum PlayerStatus
     {
+        Null,
         Stopped,
         Playing,
         Paused

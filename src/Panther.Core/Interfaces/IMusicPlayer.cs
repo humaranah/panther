@@ -1,4 +1,5 @@
 ﻿using Panther.Core.Enums;
+using Panther.Core.Events;
 
 namespace Panther.Core.Interfaces
 {
@@ -9,6 +10,8 @@ namespace Panther.Core.Interfaces
         long TrackLength { get; }
         long TrackPosition { get; }
         float Volume { get; set; }
+
+        event EventHandler<PlayerStatusChangedEventArgs> StatusChanged;
 
         void Load(string fileName);
         void Play();

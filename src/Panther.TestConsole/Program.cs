@@ -13,7 +13,13 @@ try
 
     musicPlayer.Play();
     var position = Console.GetCursorPosition();
-    Console.WriteLine("Status: Playing");
+    Console.WriteLine($"Status: {musicPlayer.Status} ");
+
+    musicPlayer.StatusChanged += (s, e) =>
+    {
+        Console.SetCursorPosition(position.Left, position.Top);
+        Console.WriteLine($"Status: {e.CurrentStatus} ");
+    };
 
     var key = Console.ReadKey(true).Key;
     while (key != ConsoleKey.Escape)
@@ -27,14 +33,10 @@ try
         if (musicPlayer.Status == PlayerStatus.Playing)
         {
             musicPlayer.Pause();
-            Console.SetCursorPosition(position.Left, position.Top);
-            Console.WriteLine("Status: Paused ");
         }
         else
         {
             musicPlayer.Play();
-            Console.SetCursorPosition(position.Left, position.Top);
-            Console.WriteLine("Status: Playing");
         }
 
         key = Console.ReadKey(true).Key;
