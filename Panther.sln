@@ -16,13 +16,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Panther.WPF", "src\Panther.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Panther.TestConsole", "src\Panther.TestConsole\Panther.TestConsole.csproj", "{C3D8724D-7342-488C-9DAD-B56A75510096}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "lib", "lib", "{5BA6F042-DEB1-4A3D-B7D5-62660503E294}"
-	ProjectSection(SolutionItems) = preProject
-		lib\bass.dll = lib\bass.dll
-	EndProjectSection
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "examples", "examples", "{CF80456C-0923-4742-BAE4-4E4F67B9EC48}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -49,8 +42,6 @@ Global
 		{1C840903-901D-4A30-A8E0-47358E3748DF} = {3FBAE8E4-6D91-40D6-AC3C-CE874117F5AB}
 		{581DA9A0-93DB-4D03-931F-FC514380A006} = {3FBAE8E4-6D91-40D6-AC3C-CE874117F5AB}
 		{C3D8724D-7342-488C-9DAD-B56A75510096} = {3FBAE8E4-6D91-40D6-AC3C-CE874117F5AB}
-		{5BA6F042-DEB1-4A3D-B7D5-62660503E294} = {F5A49192-2C4E-47F5-84B1-A35A12A7AF03}
-		{CF80456C-0923-4742-BAE4-4E4F67B9EC48} = {F5A49192-2C4E-47F5-84B1-A35A12A7AF03}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {6896E033-F01D-4D84-B74A-9C22F0DF1006}

@@ -12,13 +12,14 @@ A modern, cross-platform music player written in .Net.
 | | |
 |-|-|
 | Un4seen.bass | https://www.un4seen.com/ |
+| ManagedBass | https://github.com/ManagedBass/ManagedBass |
 | Taglib-sharp | https://github.com/mono/taglib-sharp |
 
 ## Compile and run
 
 ### Panther.TestConsole
 
-#### VisualStudio
+#### Visual Studio
 1.	Download bass.dll and put inside `./lib/`.
 2.	Put any mp3 song you want inside `./examples` and rename it to `song.mp3`.
 	*	You can also use any other format and update the song name string inside `Program.cs`.
