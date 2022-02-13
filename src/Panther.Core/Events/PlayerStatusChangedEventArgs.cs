@@ -4,13 +4,13 @@ namespace Panther.Core.Events
 {
     public class PlayerStatusChangedEventArgs
     {
-        public PlayerStatusChangedEventArgs(PlayerStatus previousStatus, PlayerStatus currentStatus)
+        public PlayerStatusChangedEventArgs(PlayerStatus last, PlayerStatus current)
         {
-            PreviousStatus = previousStatus;
-            CurrentStatus = currentStatus;
+            Last = last;
+            Current = current;
         }
 
-        public PlayerStatus PreviousStatus { get; }
-        public PlayerStatus CurrentStatus { get; }
+        public PlayerStatus Last { get; }
+        public PlayerStatus Current { get; }
     }
 }

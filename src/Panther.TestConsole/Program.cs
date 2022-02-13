@@ -18,7 +18,7 @@ try
     musicPlayer.StatusChanged += (s, e) =>
     {
         Console.SetCursorPosition(position.Left, position.Top);
-        Console.WriteLine($"Status: {e.CurrentStatus} ");
+        Console.WriteLine($"Status: {e.Current} ");
     };
 
     var key = Console.ReadKey(true).Key;
