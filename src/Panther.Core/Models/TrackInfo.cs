@@ -6,7 +6,9 @@ namespace Panther.Core.Models
     {
         private string _fileName = "";
 
-        public TrackInfo() { }
+        internal TrackInfo() { }
+
+        public TrackInfo(string fileName) => FileName = fileName;
 
         public TrackInfo(TagLib.File file)
         {

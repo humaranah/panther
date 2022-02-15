@@ -31,7 +31,7 @@ namespace Panther.Core.Services
             set => _index = _tracks.FindIndex(x => x.FileName == value?.FileName);
         }
 
-        public int QueueCount => _tracks.Count;
+        public int Count => _tracks.Count;
 
         public event EventHandler<QueueTrackChangedEventArgs>? QueueTrackChanged;
         #endregion

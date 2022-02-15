@@ -10,7 +10,7 @@ namespace Panther.Core.Interfaces
         bool IsShuffleEnabled { get; set; }
         RepeatMode RepeatMode { get; set; }
         TrackInfo? Current { get; set; }
-        int QueueCount { get; }
+        int Count { get; }
 
         event EventHandler<QueueTrackChangedEventArgs> QueueTrackChanged;
 
