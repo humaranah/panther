@@ -1,5 +1,6 @@
 ﻿// See https://aka.ms/new-console-template for more information
 using ManagedBass;
+using Panther.Bass;
 using Panther.Core.Enums;
 using Panther.Core.Services;
 
@@ -7,17 +8,18 @@ Console.Title = "Panther Test Console";
 
 try
 {
-    var musicPlayer = new MusicPlayer();
+    var bass = new BassPlayer();
+    var musicPlayer = new MusicPlayer(bass);
     musicPlayer.Load("song.mp3");
     Console.WriteLine($"Loaded: {musicPlayer.FileName}\n");
 
     musicPlayer.Play();
-    var position = Console.GetCursorPosition();
+    var (left, top) = Console.GetCursorPosition();
     Console.WriteLine($"Status: {musicPlayer.Status} ");
 
     musicPlayer.StatusChanged += (s, e) =>
     {
-        Console.SetCursorPosition(position.Left, position.Top);
+        Console.SetCursorPosition(left, top);
         Console.WriteLine($"Status: {e.Current} ");
     };
 
