@@ -2,14 +2,19 @@
 A modern, cross-platform music player written in .Net.
 
 ## Project list
-| | |
+| Project | Description |
 |-|-|
 | Panther.Core | Core files |
 | Panther.TestConsole | Console project for testing music playback |
 | Panther.WPF | Windows Desktop Project |
 
+## Test project list
+| Project | Description |
+|-|-|
+| Panther.Core.UnitTests | Unit tests for `Panther.Core` |
+
 ## Libraries used
-| | |
+| Library | URL |
 |-|-|
 | Un4seen.bass | https://www.un4seen.com/ |
 | ManagedBass | https://github.com/ManagedBass/ManagedBass |
