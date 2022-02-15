@@ -23,7 +23,7 @@ namespace Panther.Core.UnitTests
             };
 
             var exception = Assert.Throws<ArgumentException>(execution);
-            Assert.StartsWith(ErrorConstants.ValueNotNullOrEmpty, exception.Message);
+            Assert.StartsWith(ErrorMessages.ValueNotNullOrEmpty, exception.Message);
             Assert.Equal(nameof(TrackInfo.FileName), exception.ParamName);
         }
     }

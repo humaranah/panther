@@ -1,4 +1,5 @@
 ﻿using ManagedBass;
+using Panther.Core.Constants;
 using Panther.Core.Enums;
 using Panther.Core.Events;
 using Panther.Core.Interfaces;
@@ -13,7 +14,7 @@ namespace Panther.Core.Services
         {
             if (!Bass.Init())
             {
-                throw new ApplicationException("Could not init BASS!");
+                throw new ApplicationException(ErrorMessages.CouldNotInitBass);
             }
         }
 
@@ -29,7 +30,7 @@ namespace Panther.Core.Services
         {
             if (!File.Exists(fileName))
             {
-                throw new ApplicationException($"Could not find \"{Path.GetFullPath(fileName)}\"!");
+                throw new ApplicationException(ErrorMessages.CouldNotInit(fileName));
             }
 
             FileName = fileName;

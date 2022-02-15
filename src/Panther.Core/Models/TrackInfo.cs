@@ -26,7 +26,7 @@ namespace Panther.Core.Models
             {
                 if (string.IsNullOrWhiteSpace(value))
                 {
-                    throw new ArgumentException(ErrorConstants.ValueNotNullOrEmpty, nameof(FileName));
+                    throw new ArgumentException(ErrorMessages.ValueNotNullOrEmpty, nameof(FileName));
                 }
                 _fileName = value;
             }

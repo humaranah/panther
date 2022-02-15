@@ -56,7 +56,7 @@ namespace Panther.Core.Services
         {
             if (!IsLoaded)
             {
-                throw new InvalidOperationException(ErrorConstants.QueueNotInitialized);
+                throw new InvalidOperationException(ErrorMessages.QueueNotInitialized);
             }
 
             var found = _tracks.FindIndex(x => x.FileName == track.FileName);
@@ -77,7 +77,7 @@ namespace Panther.Core.Services
         {
             if (!IsLoaded)
             {
-                throw new InvalidOperationException(ErrorConstants.QueueNotInitialized);
+                throw new InvalidOperationException(ErrorMessages.QueueNotInitialized);
             }
 
             var previous = _index >= 0 ? _tracks[_index] : null;
@@ -92,7 +92,7 @@ namespace Panther.Core.Services
         {
             if (!IsLoaded)
             {
-                throw new InvalidOperationException(ErrorConstants.QueueNotInitialized);
+                throw new InvalidOperationException(ErrorMessages.QueueNotInitialized);
             }
 
             var previous = _index >= 0 ? _tracks[_index] : null;
