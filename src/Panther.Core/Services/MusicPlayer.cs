@@ -30,7 +30,7 @@ namespace Panther.Core.Services
         {
             if (!File.Exists(fileName))
             {
-                throw new ApplicationException(ErrorMessages.CouldNotInit(fileName));
+                throw new ApplicationException(ErrorMessages.CouldNotFind(fileName));
             }
 
             FileName = fileName;

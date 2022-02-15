@@ -1,6 +1,8 @@
-﻿using Panther.Core.Enums;
+﻿using Panther.Core.Constants;
+using Panther.Core.Enums;
 using Panther.Core.Services;
 using Panther.Core.UnitTests.Mocks;
+using System;
 using System.IO;
 using Xunit;
 
@@ -30,6 +32,20 @@ namespace Panther.Core.UnitTests
             Assert.Equal(fileName, _player.FileName);
             Assert.Equal(PlayerStatus.Stopped, _player.Status);
             Assert.Equal(1, events);
+        }
+
+        [Fact]
+        public void Load_GivenInvalidFile_ShouldThrowException()
+        {
+            var events = 0;
+            var fileName = "a.mp3";
+
+            var action = () => _player.Load(fileName);
+            var exception = Assert.Throws<ApplicationException>(action);
+
+            Assert.Equal(ErrorMessages.CouldNotFind(fileName), exception.Message);
+            Assert.Equal(PlayerStatus.Null, _player.Status);
+            Assert.Equal(0, events);
         }
     }
 }
