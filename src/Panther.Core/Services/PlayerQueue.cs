@@ -1,116 +1,130 @@
 ﻿using Panther.Core.Constants;
 using Panther.Core.Enums;
 using Panther.Core.Events;
+using Panther.Core.Extensions;
 using Panther.Core.Interfaces;
 using Panther.Core.Models;
-using Panther.Core.Extensions;
 
 namespace Panther.Core.Services
 {
     public class PlayerQueue : IPlayerQueue
     {
-        private LinkedList<TrackInfo> _tracks;
-        private LinkedListNode<TrackInfo>? _current;
+        private List<TrackInfo> _tracks;
+        private int _index;
 
         public PlayerQueue()
         {
-            _tracks = new LinkedList<TrackInfo>();
-            _current = null;
+            _tracks = new();
+            _index = -1;
         }
+
+        #region Properties
+        public bool IsLoaded => _tracks.Any() && _index >= 0;
 
         public bool IsShuffleEnabled { get; set; }
+
         public RepeatMode RepeatMode { get; set; }
+
         public TrackInfo? Current
         {
-            get => _current?.Value;
-            set
-            {
-                if (value != null)
-                {
-                    _current = _tracks.Find(value);
-                }
-            }
+            get => _index >= 0 ? _tracks[_index] : null;
+            set => _index = _tracks.FindIndex(x => x.FileName == value?.FileName);
         }
 
-        public event EventHandler<QueueTrackChangedEventArgs>? QueueTrackChanged;
+        public int QueueCount => _tracks.Count;
 
+        public event EventHandler<QueueTrackChangedEventArgs>? QueueTrackChanged;
+        #endregion
+
+        #region Implemented Methods
         public void Load(IEnumerable<TrackInfo> tracks)
         {
-            _tracks = new LinkedList<TrackInfo>(tracks);
-            _current = _tracks.First;
+            _tracks = new(tracks);
+            _index = 0;
         }
 
         public void Add(TrackInfo track)
         {
-            if (!_tracks.Any())
+            _tracks.Add(track);
+            if (_index < 0)
             {
-                throw new InvalidOperationException(ErrorConstants.QueueNotInitialized);
+                _index = 0;
             }
-
-            _tracks.AddLast(track);
         }
 
         public void Remove(TrackInfo track)
         {
-            if (!_tracks.Any())
+            if (!IsLoaded)
             {
                 throw new InvalidOperationException(ErrorConstants.QueueNotInitialized);
             }
 
-            var found = _tracks.Find(track);
-            if (found == null)
+            var found = _tracks.FindIndex(x => x.FileName == track.FileName);
+            if (found < 0)
             {
                 return;
             }
 
-            if (_current == found)
+            if (_index == found)
             {
                 Next();
             }
 
-            _tracks.Remove(found);
+            _tracks.RemoveAt(found);
         }
 
         public TrackInfo? Next()
         {
-            if (_current == null)
+            if (!IsLoaded)
             {
                 throw new InvalidOperationException(ErrorConstants.QueueNotInitialized);
             }
 
-            _current = GetNext();
-            QueueTrackChanged?.Invoke(this, new QueueTrackChangedEventArgs(_current?.Previous?.Value, _current?.Value));
-            return _current?.Value;
+            var previous = _index >= 0 ? _tracks[_index] : null;
+            _index = GetNextPosition();
+            var current = _index >= 0 ? _tracks[_index] : null;
+
+            QueueTrackChanged?.Invoke(this, new QueueTrackChangedEventArgs(previous, current));
+            return current;
         }
 
         public TrackInfo? Previous()
         {
-            if (_current == null)
+            if (!IsLoaded)
             {
                 throw new InvalidOperationException(ErrorConstants.QueueNotInitialized);
             }
 
-            _current = GetPrevious();
-            QueueTrackChanged?.Invoke(this, new QueueTrackChangedEventArgs(_current?.Previous?.Value, _current?.Value));
-            return _current?.Value;
+            var previous = _index >= 0 ? _tracks[_index] : null;
+            _index = GetPreviousPosition();
+            var current = _index >= 0 ? _tracks[_index] : null;
+
+            QueueTrackChanged?.Invoke(this, new QueueTrackChangedEventArgs(previous, current));
+            return current;
         }
+        #endregion
 
         #region Private methods
-        private LinkedListNode<TrackInfo>? GetNext()
+        private int GetNextPosition()
         {
-            if (RepeatMode == RepeatMode.RepeatCurrent)
+            if (_index < 0)
             {
-                return _current;
+                return 0;
             }
 
-            if (_current!.Next != null)
+            if (RepeatMode == RepeatMode.RepeatCurrent)
             {
-                return _current.Next;
+                return _index;
+            }
+
+            if (++_index < _tracks.Count)
+            {
+                return _index;
             }
 
             if (RepeatMode == RepeatMode.NoRepeat)
             {
-                return null;
+                return -1;
             }
 
             if (IsShuffleEnabled)
@@ -118,34 +132,38 @@ namespace Panther.Core.Services
                 Shuffle();
             }
 
-            return _tracks.First;
+            return 0;
         }
 
-        private LinkedListNode<TrackInfo>? GetPrevious()
+        private int GetPreviousPosition()
         {
-            if (RepeatMode == RepeatMode.RepeatCurrent)
+            if (_index < 0)
             {
-                return _current;
+                return 0;
             }
 
-            if (_current!.Previous != null)
+            if (RepeatMode == RepeatMode.RepeatCurrent)
             {
-                return _current.Previous;
+                return _index;
+            }
+
+            if (--_index >= 0)
+            {
+                return _index;
             }
 
             if (RepeatMode == RepeatMode.NoRepeat)
             {
-                return null;
+                return -1;
             }
 
-            if (!IsShuffleEnabled && _tracks.Last != null)
+            if (!IsShuffleEnabled)
             {
-                return _tracks.Last;
+                return _tracks.Count - 1;
             }
 
             Shuffle();
-
-            return _tracks.First;
+            return 0;
         }
 
         private void Shuffle() => Load(_tracks.Randomize());

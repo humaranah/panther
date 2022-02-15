@@ -6,9 +6,11 @@ namespace Panther.Core.Interfaces
 {
     public interface IPlayerQueue
     {
+        bool IsLoaded { get; }
         bool IsShuffleEnabled { get; set; }
         RepeatMode RepeatMode { get; set; }
         TrackInfo? Current { get; set; }
+        int QueueCount { get; }
 
         event EventHandler<QueueTrackChangedEventArgs> QueueTrackChanged;
 

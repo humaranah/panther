@@ -1,12 +1,39 @@
-﻿namespace Panther.Core.Models
+﻿using Panther.Core.Constants;
+
+namespace Panther.Core.Models
 {
     public class TrackInfo
     {
-        public string FileName { get; set; } = "";
+        private string _fileName = "";
+
+        public TrackInfo() { }
+
+        public TrackInfo(TagLib.File file)
+        {
+            FileName = file.Name;
+            Length = file.Length;
+            Title = file.Tag.Title;
+            Album = file.Tag.Album;
+            Composer = file.Tag.JoinedComposers;
+        }
+
+        public string FileName
+        {
+            get => _fileName;
+            set
+            {
+                if (string.IsNullOrWhiteSpace(value))
+                {
+                    throw new ArgumentException(ErrorConstants.ValueNotNullOrEmpty, nameof(FileName));
+                }
+                _fileName = value;
+            }
+        }
+
+        public long Length { get; set; }
         public string Title { get; set; } = "";
         public string Album { get; set; } = "";
         public string Composer { get; set; } = "";
-        public long Length { get; set; }
 
     }
 }
