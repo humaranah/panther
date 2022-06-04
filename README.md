@@ -13,19 +13,14 @@ A modern, cross-platform music player written in .Net.
 |-|-|
 | Panther.Core.UnitTests | Unit tests for `Panther.Core` |
 
-## Libraries used
+## Third-party libraries used
 | Library | URL |
 |-|-|
-| Un4seen.bass | https://www.un4seen.com/ |
-| ManagedBass | https://github.com/ManagedBass/ManagedBass |
+| NAudio | https://github.com/naudio/NAudio/ |
 | Taglib-sharp | https://github.com/mono/taglib-sharp |
 
 ## Compile and run
 
-### Panther.TestConsole
-
-#### Visual Studio
-1.	Download bass.dll and put inside `./lib/`.
-2.	Put any mp3 song you want inside `./examples` and rename it to `song.mp3`.
-	*	You can also use any other format and update the song name string inside `Program.cs`.
-3.	Click on Run
+Before compiling:
+- Put any mp3 song you want inside the `./samples` folder and rename it to `song.mp3`.
+  _(You can also use any other format and update the song name string inside `Program.cs`.)_

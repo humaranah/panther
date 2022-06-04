@@ -1,9 +1,8 @@
-﻿namespace Panther.Core.Enums
+﻿namespace Panther.Core.Enums;
+
+public enum RepeatMode
 {
-    public enum RepeatMode
-    {
-        NoRepeat,
-        Repeat,
-        RepeatCurrent
-    }
+    NoRepeat,
+    Repeat,
+    RepeatCurrent
 }

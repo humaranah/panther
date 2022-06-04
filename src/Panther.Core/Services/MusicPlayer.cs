@@ -1,66 +1,68 @@
-﻿using Panther.Bass;
+﻿using NAudio.Wave;
 using Panther.Core.Constants;
 using Panther.Core.Enums;
 using Panther.Core.Events;
-using Panther.Core.Interfaces;
 
-namespace Panther.Core.Services
+namespace Panther.Core.Services;
+
+public sealed class MusicPlayer : IMusicPlayer, IDisposable, IAsyncDisposable
 {
-    public sealed class MusicPlayer : IMusicPlayer, IDisposable
+    private readonly WaveOutEvent _wavePlayer;
+
+    private AudioFileReader? _audioFile;
+
+    public MusicPlayer(WaveOutEvent wavePlayer)
     {
-        private readonly IBassPlayer _bass;
-        private int _stream;
+        _wavePlayer = wavePlayer;
+    }
 
-        public MusicPlayer(IBassPlayer bass)
+    public string FileName => _audioFile?.FileName ?? "";
+    public PlayerStatus Status => (PlayerStatus)_wavePlayer.PlaybackState;
+    public long TrackLength { get => _audioFile?.Length ?? 0; }
+    public long TrackPosition { get => _audioFile?.Position ?? 0; }
+    public float Volume
+    {
+        get => _wavePlayer.Volume;
+        set => _wavePlayer.Volume = value;
+    }
+
+    public event EventHandler<PlayerStatusChangedEventArgs>? StatusChanged;
+
+    public void Dispose() => _audioFile?.Dispose();
+
+    public ValueTask DisposeAsync() => _audioFile?.DisposeAsync() ?? ValueTask.CompletedTask;
+
+    public void Load(string fileName)
+    {
+        if (!File.Exists(fileName))
         {
-            _bass = bass;
+            throw new FileNotFoundException(ErrorMessages.CouldNotFind(fileName), fileName);
         }
+        _audioFile = new AudioFileReader(fileName);
+        _wavePlayer.Init(_audioFile);
+    }
 
-        public string FileName { get; private set; } = "";
-        public PlayerStatus Status { get; private set; } = PlayerStatus.Null;
-        public long TrackLength { get => _bass.ChannelGetLength(_stream); }
-        public long TrackPosition { get => _bass.ChannelGetPosition(_stream); }
-        public float Volume { get; set; }
+    public void Pause()
+    {
+        _wavePlayer.Pause();
+        ChangeStatus(PlayerStatus.Paused);
+    }
 
-        public event EventHandler<PlayerStatusChangedEventArgs>? StatusChanged;
+    public void Play()
+    {
+        _wavePlayer.Play();
+        ChangeStatus(PlayerStatus.Playing);
+    }
 
-        public void Dispose() => _bass.Dispose();
+    public void Stop()
+    {
+        _wavePlayer.Stop();
+        ChangeStatus(PlayerStatus.Stopped);
+    }
 
-        public void Load(string fileName)
-        {
-            if (!File.Exists(fileName))
-            {
-                throw new ApplicationException(ErrorMessages.CouldNotFind(fileName));
-            }
-
-            FileName = fileName;
-            _stream = _bass.CreateStream(FileName);
-            ChangeStatus(PlayerStatus.Stopped);
-        }
-
-        public void Pause()
-        {
-            _bass.ChannelPause(_stream);
-            ChangeStatus(PlayerStatus.Paused);
-        }
-
-        public void Play()
-        {
-            _bass.ChannelPlay(_stream);
-            ChangeStatus(PlayerStatus.Playing);
-        }
-
-        public void Stop()
-        {
-            _bass.ChannelStop(_stream);
-            ChangeStatus(PlayerStatus.Stopped);
-        }
-
-        private void ChangeStatus(PlayerStatus targetStatus)
-        {
-            var data = new PlayerStatusChangedEventArgs(Status, targetStatus);
-            Status = targetStatus;
-            StatusChanged?.Invoke(this, data);
-        }
+    private void ChangeStatus(PlayerStatus targetStatus)
+    {
+        var data = new PlayerStatusChangedEventArgs(Status, targetStatus);
+        StatusChanged?.Invoke(this, data);
     }
 }

@@ -18,9 +18,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Panther.TestConsole", "src\
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{C4AE67F0-F167-4DC9-90AE-C0B736E0C8F7}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Panther.Core.UnitTests", "tests\Panther.Core.UnitTests\Panther.Core.UnitTests.csproj", "{496DDE69-C1FA-4DE5-A235-43468C81D928}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Panther.Bass", "src\Panther.Bass\Panther.Bass.csproj", "{1F598BD7-410F-4232-8CF3-E6CF2D7C9026}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Panther.Core.UnitTests", "tests\Panther.Core.UnitTests\Panther.Core.UnitTests.csproj", "{496DDE69-C1FA-4DE5-A235-43468C81D928}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -44,10 +42,6 @@ Global
 		{496DDE69-C1FA-4DE5-A235-43468C81D928}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{496DDE69-C1FA-4DE5-A235-43468C81D928}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{496DDE69-C1FA-4DE5-A235-43468C81D928}.Release|Any CPU.Build.0 = Release|Any CPU
-		{1F598BD7-410F-4232-8CF3-E6CF2D7C9026}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{1F598BD7-410F-4232-8CF3-E6CF2D7C9026}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{1F598BD7-410F-4232-8CF3-E6CF2D7C9026}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{1F598BD7-410F-4232-8CF3-E6CF2D7C9026}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -57,7 +51,6 @@ Global
 		{581DA9A0-93DB-4D03-931F-FC514380A006} = {3FBAE8E4-6D91-40D6-AC3C-CE874117F5AB}
 		{C3D8724D-7342-488C-9DAD-B56A75510096} = {3FBAE8E4-6D91-40D6-AC3C-CE874117F5AB}
 		{496DDE69-C1FA-4DE5-A235-43468C81D928} = {C4AE67F0-F167-4DC9-90AE-C0B736E0C8F7}
-		{1F598BD7-410F-4232-8CF3-E6CF2D7C9026} = {3FBAE8E4-6D91-40D6-AC3C-CE874117F5AB}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {6896E033-F01D-4D84-B74A-9C22F0DF1006}

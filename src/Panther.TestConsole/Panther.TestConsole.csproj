@@ -12,7 +12,7 @@
   </ItemGroup>
 
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-    <Exec Command="xcopy /y $(SolutionDir)lib\bass.dll  $(ProjectDir)$(OutDir)&#xD;&#xA;xcopy /y $(SolutionDir)examples\song.mp3  $(ProjectDir)$(OutDir)&#xD;&#xA;&#xD;&#xA;" />
+    <Exec Command="xcopy /y $(SolutionDir)samples\song.mp3  $(ProjectDir)$(OutDir)&#xD;&#xA;&#xD;&#xA;" />
   </Target>
 
 </Project>

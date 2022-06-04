@@ -1,10 +1,8 @@
-﻿namespace Panther.Core.Enums
+﻿namespace Panther.Core.Enums;
+
+public enum PlayerStatus
 {
-    public enum PlayerStatus
-    {
-        Null,
-        Stopped,
-        Playing,
-        Paused
-    }
+    Stopped,
+    Playing,
+    Paused
 }

@@ -1,6 +1,5 @@
 ﻿// See https://aka.ms/new-console-template for more information
-using ManagedBass;
-using Panther.Bass;
+using NAudio.Wave;
 using Panther.Core.Enums;
 using Panther.Core.Services;
 
@@ -8,8 +7,8 @@ Console.Title = "Panther Test Console";
 
 try
 {
-    var bass = new BassPlayer();
-    var musicPlayer = new MusicPlayer(bass);
+    var wavePlayer = new WaveOutEvent();
+    var musicPlayer = new MusicPlayer(wavePlayer);
     musicPlayer.Load("song.mp3");
     Console.WriteLine($"Loaded: {musicPlayer.FileName}\n");
 
@@ -44,8 +43,7 @@ try
         key = Console.ReadKey(true).Key;
     }
 
-    musicPlayer.Stop();
-    Bass.Free();
+    musicPlayer.Stop(); wavePlayer.Dispose();
 }
 catch (Exception ex)
 {
