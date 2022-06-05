@@ -8,7 +8,7 @@ namespace Panther.Core.UnitTests;
 
 public class PlayerQueueTests
 {
-    private PlayerQueue _playerQueue;
+    private readonly PlayerQueue _playerQueue;
 
     public PlayerQueueTests()
     {

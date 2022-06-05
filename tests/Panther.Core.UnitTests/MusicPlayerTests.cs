@@ -3,11 +3,12 @@ using NAudio.Wave;
 using Panther.Core.Constants;
 using Panther.Core.Enums;
 using Panther.Core.Services;
+using System;
 using System.IO;
 using Xunit;
 
 namespace Panther.Core.UnitTests;
-public class MusicPlayerTests
+public sealed class MusicPlayerTests : IDisposable
 {
     private readonly Mock<WaveOutEvent> _wavePlayer;
     private readonly MusicPlayer _musicPlayer;
@@ -42,4 +43,6 @@ public class MusicPlayerTests
         Assert.Equal(PlayerStatus.Stopped, _musicPlayer.Status);
         Assert.Equal(0, events);
     }
+
+    public void Dispose() => _musicPlayer.Dispose();
 }
