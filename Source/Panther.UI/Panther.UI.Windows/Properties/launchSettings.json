@@ -1,0 +1,7 @@
+{
+  "profiles": {
+    "Panther.UI.Windows": {
+      "commandName": "MsixPackage"
+    }
+  }
+}
