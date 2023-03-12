@@ -1,60 +1,65 @@
-﻿using NAudio.Wave;
-using Panther.Core.Constants;
+﻿using Panther.Core.Constants;
 using Panther.Core.Enums;
 using Panther.Core.Events;
+using Un4seen.Bass;
 
 namespace Panther.Core.Services;
 
-public sealed class MusicPlayer : IMusicPlayer, IDisposable, IAsyncDisposable
+public sealed class MusicPlayer : IMusicPlayer, IDisposable
 {
-    private readonly WaveOutEvent _wavePlayer;
+    private int _stream;
 
-    private AudioFileReader? _audioFile;
-
-    public MusicPlayer(WaveOutEvent wavePlayer)
+    public MusicPlayer()
     {
-        _wavePlayer = wavePlayer;
+        Bass.BASS_Init(-1, 0, BASSInit.BASS_DEVICE_STEREO | BASSInit.BASS_DEVICE_FREQ, IntPtr.Zero);
+        FileName = string.Empty;
     }
 
-    public string FileName => _audioFile?.FileName ?? "No media";
-    public PlayerStatus Status => (PlayerStatus)_wavePlayer.PlaybackState;
-    public long TrackLength => _audioFile?.Length ?? 0;
-    public long TrackPosition => _audioFile?.Position ?? 0;
+    public string FileName { get; private set; }
+    public PlayerStatus Status { get; private set; }
+    public long TrackLength => Bass.BASS_ChannelGetLength(_stream);
+    public long PlaybackPosition => Bass.BASS_ChannelGetPosition(_stream);
     public float Volume
     {
-        get => _wavePlayer.Volume;
-        set => _wavePlayer.Volume = value;
+        get => Bass.BASS_GetVolume();
+        set => Bass.BASS_SetVolume(value);
     }
 
     public event EventHandler<PlayerStatusChangedEventArgs>? StatusChanged;
 
-    public void Dispose() => _audioFile?.Dispose();
-
-    public ValueTask DisposeAsync() => _audioFile?.DisposeAsync() ?? ValueTask.CompletedTask;
+    public void Dispose()
+    {
+        if (_stream != 0)
+        {
+            Bass.BASS_StreamFree(_stream);
+            _stream = 0;
+        }
+        Bass.BASS_Free();
+    }
 
     public void Load(string fileName)
     {
         if (!File.Exists(fileName))
             throw new FileNotFoundException(ErrorMessages.CouldNotFind(fileName), fileName);
-        _audioFile = new AudioFileReader(fileName);
-        _wavePlayer.Init(_audioFile);
+        _stream = Bass.BASS_StreamCreateFile(fileName, 0, 0, BASSFlag.BASS_DEFAULT);
+        FileName = fileName;
     }
 
     public void Pause()
     {
-        _wavePlayer.Pause();
+        Bass.BASS_ChannelPause(_stream);
         ChangeStatus(PlayerStatus.Paused);
     }
 
     public void Play()
     {
-        _wavePlayer.Play();
+        Bass.BASS_ChannelPlay(_stream, false);
         ChangeStatus(PlayerStatus.Playing);
     }
 
     public void Stop()
     {
-        _wavePlayer.Stop();
+        Bass.BASS_ChannelStop(_stream);
         ChangeStatus(PlayerStatus.Stopped);
     }
 

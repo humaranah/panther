@@ -6,17 +6,18 @@ namespace Panther.Core.Services;
 
 public interface IPlayerQueue
 {
+    event EventHandler<TrackChangedEventArgs>? TrackChanged;
+
     bool IsLoaded { get; }
     bool IsShuffleEnabled { get; set; }
     RepeatMode RepeatMode { get; set; }
-    TrackInfo? Current { get; set; }
-    int Count { get; }
+    IReadOnlyCollection<TrackInfo> Played { get; }
+    IReadOnlyCollection<TrackInfo> Remaining { get; }
+    TrackInfo? Current { get; }
 
-    event EventHandler<QueueTrackChangedEventArgs> QueueTrackChanged;
-
-    void Load(IEnumerable<TrackInfo> tracks);
+    void Load(IReadOnlyPlaylist playlist);
     void Add(TrackInfo track);
-    void Remove(TrackInfo track);
+    void AddLast(TrackInfo track);
     TrackInfo? Previous();
     TrackInfo? Next();
 }

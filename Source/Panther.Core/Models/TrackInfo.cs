@@ -3,7 +3,7 @@
 namespace Panther.Core.Models;
 public record TrackInfo
 {
-    private string _fileName = "";
+    private string _fileName = string.Empty;
 
     internal TrackInfo() { }
 
@@ -32,8 +32,8 @@ public record TrackInfo
     }
 
     public long Length { get; set; }
-    public string Title { get; set; } = "";
-    public string Album { get; set; } = "";
-    public string Composer { get; set; } = "";
+    public string Title { get; set; } = string.Empty;
+    public string Album { get; set; } = string.Empty;
+    public string Composer { get; set; } = string.Empty;
 
 }

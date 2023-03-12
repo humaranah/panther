@@ -3,7 +3,7 @@ using Panther.Core.Models;
 using System;
 using Xunit;
 
-namespace Panther.Core.UnitTests;
+namespace Panther.Core.UnitTests.Models;
 
 public class TrackInfoTests
 {

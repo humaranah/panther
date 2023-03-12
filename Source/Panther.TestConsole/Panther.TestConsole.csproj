@@ -8,6 +8,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Reference Include="Bass.Net">
+      <HintPath>$(BASSNET_HOME)\full\Bass.Net.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\Panther.Core\Panther.Core.csproj" />
   </ItemGroup>
 

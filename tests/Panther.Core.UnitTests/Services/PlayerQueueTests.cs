@@ -1,10 +1,9 @@
 ﻿using Panther.Core.Models;
 using Panther.Core.Services;
-using System.Collections.Generic;
 using System.Linq;
 using Xunit;
 
-namespace Panther.Core.UnitTests;
+namespace Panther.Core.UnitTests.Services;
 
 public class PlayerQueueTests
 {
@@ -18,7 +17,7 @@ public class PlayerQueueTests
     [Fact]
     public void Load_GivenTrackList_ShouldLoadIt()
     {
-        var trackList = new List<TrackInfo>
+        var trackList = new Playlist
             {
                 new TrackInfo("a.wav"),
                 new TrackInfo("b.wav")
@@ -27,33 +26,35 @@ public class PlayerQueueTests
         _playerQueue.Load(trackList);
 
         Assert.True(_playerQueue.IsLoaded);
-        Assert.Equal(2, _playerQueue.Count);
         Assert.Equal(trackList.First().FileName, _playerQueue.Current?.FileName);
     }
 
     [Fact]
-    public void Add_GivenTrack_WithEmptyQueue_ShouldAddItToEnd()
+    public void Add_GivenTrack_WithEmptyQueue_ShouldAddIt()
     {
         var trackInfo = new TrackInfo("a.wav");
 
         _playerQueue.Add(trackInfo);
 
         Assert.True(_playerQueue.IsLoaded);
-        Assert.Equal(1, _playerQueue.Count);
     }
 
     [Fact]
-    public void Add_GivenTrack_WithNonEmptyQueue_ShouldAddItToEnd()
+    public void Add_GivenTrack_WithNonEmptyQueue_ShouldAddItNext()
     {
-        var initialTrackList = new List<TrackInfo>()
-            {
-                new TrackInfo("a.wav")
-            };
-        var trackInfo = new TrackInfo("b.wav");
+        var initialTrackList = new Playlist
+        {
+            new TrackInfo("a.wav"),
+            new TrackInfo("b.wav")
+        };
+        var trackInfo = new TrackInfo("test.wav");
 
         _playerQueue.Load(initialTrackList);
         _playerQueue.Add(trackInfo);
 
-        Assert.Equal(2, _playerQueue.Count);
+        Assert.NotNull(_playerQueue.Current);
+        Assert.Single(_playerQueue.Played);
+        Assert.Single(_playerQueue.Remaining);
+        Assert.Equal("test.wav", _playerQueue.Current.FileName);
     }
 }
