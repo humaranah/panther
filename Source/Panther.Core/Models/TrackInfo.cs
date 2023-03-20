@@ -7,12 +7,15 @@ public record TrackInfo
 
     internal TrackInfo() { }
 
-    public TrackInfo(string fileName) => FileName = fileName;
+    public TrackInfo(string fileName)
+    {
+        FileName = fileName;
+    }
 
     public TrackInfo(TagLib.File file)
     {
         FileName = file.Name;
-        Length = file.Length;
+        Duration = file.Properties.Duration;
         Title = file.Tag.Title;
         Album = file.Tag.Album;
         Composer = file.Tag.JoinedComposers;
@@ -31,7 +34,7 @@ public record TrackInfo
         }
     }
 
-    public long Length { get; set; }
+    public TimeSpan Duration { get; set; }
     public string Title { get; set; } = string.Empty;
     public string Album { get; set; } = string.Empty;
     public string Composer { get; set; } = string.Empty;

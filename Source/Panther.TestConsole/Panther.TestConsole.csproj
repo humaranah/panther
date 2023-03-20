@@ -8,6 +8,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Serilog.Sinks.Console" Version="4.1.0" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Reference Include="Bass.Net">
       <HintPath>$(BASSNET_HOME)\full\Bass.Net.dll</HintPath>
     </Reference>
@@ -16,5 +20,9 @@
   <ItemGroup>
     <ProjectReference Include="..\Panther.Core\Panther.Core.csproj" />
   </ItemGroup>
+
+  <Target Name="CopyBassDLL" AfterTargets="AfterBuild">
+    <Copy SourceFiles="$(BASS_DLL_PATH)\bass.dll" DestinationFolder="$(OutDir)" />
+  </Target>
 
 </Project>

@@ -8,7 +8,9 @@ public interface IMusicPlayer
     string FileName { get; }
     PlayerStatus Status { get; }
     long TrackLength { get; }
+    TimeSpan TotalTime { get; }
     long PlaybackPosition { get; }
+    TimeSpan ElapsedTime { get; }
     float Volume { get; set; }
 
     event EventHandler<PlayerStatusChangedEventArgs> StatusChanged;

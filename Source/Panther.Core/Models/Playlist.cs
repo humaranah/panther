@@ -15,6 +15,11 @@ public class Playlist
         Name = name;
     }
 
+    public Playlist(string name, IEnumerable<TrackInfo> tracks) : base(tracks)
+    {
+        Name = name;
+    }
+
     public string Name { get; set; }
     public PlayerSource Source { get; set; }
 

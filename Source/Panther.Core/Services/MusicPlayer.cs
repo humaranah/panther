@@ -11,14 +11,16 @@ public sealed class MusicPlayer : IMusicPlayer, IDisposable
 
     public MusicPlayer()
     {
-        Bass.BASS_Init(-1, 0, BASSInit.BASS_DEVICE_STEREO | BASSInit.BASS_DEVICE_FREQ, IntPtr.Zero);
+        Bass.BASS_Init(-1, -1, BASSInit.BASS_DEVICE_STEREO | BASSInit.BASS_DEVICE_FREQ, IntPtr.Zero);
         FileName = string.Empty;
     }
 
     public string FileName { get; private set; }
     public PlayerStatus Status { get; private set; }
     public long TrackLength => Bass.BASS_ChannelGetLength(_stream);
+    public TimeSpan TotalTime => TimeSpan.FromSeconds(Bass.BASS_ChannelBytes2Seconds(_stream, TrackLength));
     public long PlaybackPosition => Bass.BASS_ChannelGetPosition(_stream);
+    public TimeSpan ElapsedTime => TimeSpan.FromSeconds(Bass.BASS_ChannelBytes2Seconds(_stream, PlaybackPosition));
     public float Volume
     {
         get => Bass.BASS_GetVolume();
@@ -41,7 +43,7 @@ public sealed class MusicPlayer : IMusicPlayer, IDisposable
     {
         if (!File.Exists(fileName))
             throw new FileNotFoundException(ErrorMessages.CouldNotFind(fileName), fileName);
-        _stream = Bass.BASS_StreamCreateFile(fileName, 0, 0, BASSFlag.BASS_DEFAULT);
+        _stream = Bass.BASS_StreamCreateFile(fileName, 0, 0, BASSFlag.BASS_MUSIC_PRESCAN);
         FileName = fileName;
     }
 
@@ -66,6 +68,7 @@ public sealed class MusicPlayer : IMusicPlayer, IDisposable
     private void ChangeStatus(PlayerStatus targetStatus)
     {
         var data = new PlayerStatusChangedEventArgs(Status, targetStatus);
+        Status = targetStatus;
         StatusChanged?.Invoke(this, data);
     }
 }
