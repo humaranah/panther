@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "Panther.WindowsApp (Package)": {
+      "commandName": "MsixPackage"
+    },
+    "Panther.WindowsApp (Unpackaged)": {
+      "commandName": "Project"
+    }
+  }
+}

@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Window
+    x:Class="Panther.WindowsApp.MainWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:interactivity="using:Microsoft.Xaml.Interactivity"
+    xmlns:local="using:Panther.WindowsApp"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" xmlns:views="using:Panther.WindowsApp.Views"
+    mc:Ignorable="d"
+    Title="Panther">
+
+    <Window.SystemBackdrop>
+        <MicaBackdrop Kind="Base" />
+    </Window.SystemBackdrop>
+
+    <NavigationView x:Name="NavView" Grid.Row="0" PaneDisplayMode="Left" IsPaneToggleButtonVisible="False"
+                    IsSettingsVisible="True" OpenPaneLength="240" ItemInvoked="NavView_ItemInvoked">
+
+        <NavigationView.MenuItems>
+            <NavigationViewItem Content="Reproduciendo" Icon="Play" Tag="NowPlaying" />
+            <NavigationViewItem Content="Cola de reproducción" Tag="Queue" />
+            <NavigationViewItem Content="Biblioteca" Icon="Library" Tag="Library">
+                <NavigationViewItem.MenuItems>
+                    <NavigationViewItem Content="Artistas" Icon="OtherUser" Tag="Artists" />
+                    <NavigationViewItem Content="Álbumes" Icon="OtherUser" Tag="Albums" />
+                    <NavigationViewItem Content="Canciones" Icon="OtherUser" Tag="Songs" />
+                </NavigationViewItem.MenuItems>
+            </NavigationViewItem>
+            <NavigationViewItem Content="Listas de reproducción" Icon="List" Tag="Playlists" />
+        </NavigationView.MenuItems>
+
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition />
+                <RowDefinition Height="90" />
+            </Grid.RowDefinitions>
+
+            <Frame x:Name="ContentFrame" />
+            <Border Grid.Row="1" BorderThickness="0,1,0,0"
+                    BorderBrush="{ThemeResource SystemControlBackgroundChromeMediumRevealBorderBrush}">
+                <views:PlayerControl HorizontalAlignment="Stretch" VerticalAlignment="Stretch" />
+            </Border>
+        </Grid>
+    </NavigationView>
+</Window>
