@@ -2,6 +2,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.Windows.ApplicationModel.Resources;
 using Panther.WindowsApp.Models;
 using Panther.WindowsApp.ViewModels;
 using System.Linq;
@@ -33,6 +34,8 @@ public sealed partial class MainWindow : Window
             .OfType<NavigationViewItem>()
             .FirstOrDefault(item => item.Tag?.ToString() == "NowPlaying");
 
+        SetNavigationSettingsLabel();
+
         ExtendsContentIntoTitleBar = true;
         AppWindow.TitleBar.PreferredHeightOption = TitleBarHeightOption.Standard;
     }
@@ -41,5 +44,14 @@ public sealed partial class MainWindow : Window
     {
         var tag = (args.InvokedItemContainer as NavigationViewItem)?.Tag?.ToString();
         ViewModel.NavigateCommand.Execute(tag);
+    }
+
+    private void SetNavigationSettingsLabel()
+    {
+        var settingsItem = NavView.SettingsItem as NavigationViewItem;
+        if (settingsItem != null)
+        {
+            settingsItem.Content = App.Services.GetRequiredService<ResourceLoader>().GetString("NavSettingsLabel");
+        }
     }
 }

@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
+using Microsoft.Windows.ApplicationModel.Resources;
 using Panther.WindowsApp.Models;
 using Panther.WindowsApp.ViewModels;
 using System;
@@ -43,6 +44,7 @@ public partial class App : Application
     private static void ConfigureServices(IServiceCollection services)
     {
         services
+            .AddSingleton(new ResourceLoader())
             .AddSingleton<INavigationService, NavigationService>()
             .AddTransient<MainViewModel>();
     }
