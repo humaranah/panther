@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<UserControl
+    x:Class="Panther.WindowsApp.Views.Controls.PantherTitleBar"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:Panther.WindowsApp.Views.Controls"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+
+    <Grid>
+        <Image VerticalAlignment="Center" HorizontalAlignment="Left" Height="20" Width="20" Margin="4,0">
+            <Image.Source>
+                <SvgImageSource UriSource="ms-appx:///Assets/Visual/PantherLogo.svg"/>
+            </Image.Source>
+        </Image>
+
+        <TextBlock Text="Panther Music Player" FontSize="16" VerticalAlignment="Center"
+                   HorizontalAlignment="Center" Margin="5,0,0,0"/>
+    </Grid>
+</UserControl>

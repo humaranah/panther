@@ -7,7 +7,7 @@
     xmlns:local="using:Panther.WindowsApp"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    xmlns:views="using:Panther.WindowsApp.Views"
+    xmlns:controls="using:Panther.WindowsApp.Views.Controls"
     mc:Ignorable="d"
     Title="Panther">
 
@@ -16,37 +16,44 @@
     </Window.SystemBackdrop>
 
     <Grid>
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="Auto" />
-            <ColumnDefinition />
-        </Grid.ColumnDefinitions>
-        
         <Grid.RowDefinitions>
+            <RowDefinition Height="28" />
             <RowDefinition />
-            <RowDefinition Height="90" />
+            <RowDefinition Height="110" />
         </Grid.RowDefinitions>
 
-        <NavigationView x:Name="NavView" PaneDisplayMode="Left" IsPaneToggleButtonVisible="False"
-                IsSettingsVisible="True" OpenPaneLength="240" ItemInvoked="NavView_ItemInvoked">
+        <controls:PantherTitleBar />
+
+        <NavigationView PaneTitle="Panther" Grid.Row="1" x:Name="NavView" PaneDisplayMode="Top"
+                        IsSettingsVisible="True" OpenPaneLength="240" ItemInvoked="NavView_ItemInvoked">
 
             <NavigationView.MenuItems>
                 <NavigationViewItem x:Uid="NavItemNowPlaying" Icon="Play" Tag="NowPlaying" />
-                <NavigationViewItem x:Uid="NavItemQueue" Icon="List" Tag="Queue" />
-                <NavigationViewItem x:Uid="NavItemLibrary" Icon="Library" Tag="Library">
-                    <NavigationViewItem.MenuItems>
-                        <NavigationViewItem x:Uid="NavItemArtists" Icon="OtherUser" Tag="Artists" />
-                        <NavigationViewItem x:Uid="NavItemAlbums" Icon="OtherUser" Tag="Albums" />
-                        <NavigationViewItem x:Uid="NavItemSongs" Icon="OtherUser" Tag="Songs" />
-                    </NavigationViewItem.MenuItems>
+                <NavigationViewItemSeparator />
+                <NavigationViewItem x:Uid="NavItemArtists" Tag="Artists">
+                    <NavigationViewItem.Icon>
+                        <PathIcon Data="{StaticResource ArtistsIconPath}" />
+                    </NavigationViewItem.Icon>
                 </NavigationViewItem>
+                <NavigationViewItem x:Uid="NavItemAlbums" Tag="Albums">
+                    <NavigationViewItem.Icon>
+                        <PathIcon Data="{StaticResource DisksIconPath}" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+                <NavigationViewItem x:Uid="NavItemSongs" Tag="Songs">
+                    <NavigationViewItem.Icon>
+                        <PathIcon Data="{StaticResource TracksIconPath}" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+                <NavigationViewItemSeparator />
                 <NavigationViewItem x:Uid="NavItemPlaylists" Icon="List" Tag="Playlists" />
             </NavigationView.MenuItems>
+
+            <Frame x:Name="ContentFrame"/>
         </NavigationView>
 
-        <Frame x:Name="ContentFrame" Grid.Column="1" Background="{ThemeResource LayerOnMicaBaseAltFillColorDefault}" />
-
-        <Border>
-            <views:PlayerControl Grid.Row="1" Grid.ColumnSpan="2" />
+        <Border Grid.Row="2" BorderThickness="0,1,0,0" BorderBrush="{ThemeResource AppBarBorderThemeBrush}">
+            <controls:PlayerControl Grid.ColumnSpan="2" />
         </Border>
     </Grid>
 </Window>
