@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<UserControl
+    x:Class="Panther.WindowsApp.Views.Controls.NavigationControl"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:Panther.WindowsApp.Views.Controls"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+
+    <Grid>
+        <VisualStateManager.VisualStateGroups>
+            <VisualStateGroup x:Name="WindowStates">
+                <VisualState x:Name="NarrowState">
+                    <VisualState.StateTriggers>
+                        <AdaptiveTrigger MinWindowWidth="0" />
+                    </VisualState.StateTriggers>
+                    <VisualState.Setters>
+                        <Setter Target="NavView.IsPaneToggleButtonVisible" Value="True" />
+                        <Setter Target="NavView.PaneDisplayMode" Value="LeftMinimal" />
+                    </VisualState.Setters>
+                </VisualState>
+                <VisualState x:Name="WideState">
+                    <VisualState.StateTriggers>
+                        <AdaptiveTrigger MinWindowWidth="600" />
+                    </VisualState.StateTriggers>
+                    <VisualState.Setters>
+                        <Setter Target="NavView.IsPaneToggleButtonVisible" Value="False" />
+                        <Setter Target="NavView.PaneDisplayMode" Value="Top" />
+                    </VisualState.Setters>
+                </VisualState>
+            </VisualStateGroup>
+        </VisualStateManager.VisualStateGroups>
+
+        <NavigationView x:Name="NavView"
+                        Grid.Row="1"
+                        Grid.RowSpan="2"
+                        PaneDisplayMode="Top"
+                        IsBackButtonVisible="Collapsed"
+                        IsSettingsVisible="True"
+                        OpenPaneLength="240"
+                        ItemInvoked="NavView_ItemInvoked">
+
+            <NavigationView.MenuItems>
+                <NavigationViewItem x:Uid="NavItemNowPlaying" Icon="Play" Tag="NowPlaying" />
+                <NavigationViewItemSeparator />
+                <NavigationViewItem x:Uid="NavItemArtists" Tag="Artists">
+                    <NavigationViewItem.Icon>
+                        <PathIcon Data="{StaticResource ArtistsIconPath}" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+                <NavigationViewItem x:Uid="NavItemAlbums" Tag="Albums">
+                    <NavigationViewItem.Icon>
+                        <PathIcon Data="{StaticResource DisksIconPath}" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+                <NavigationViewItem x:Uid="NavItemSongs" Tag="Songs">
+                    <NavigationViewItem.Icon>
+                        <PathIcon Data="{StaticResource TracksIconPath}" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+                <NavigationViewItemSeparator />
+                <NavigationViewItem x:Uid="NavItemPlaylists" Icon="List" Tag="Playlists" />
+            </NavigationView.MenuItems>
+
+            <Frame x:Name="ContentFrame"/>
+        </NavigationView>
+    </Grid>
+</UserControl>

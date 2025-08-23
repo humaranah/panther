@@ -6,13 +6,105 @@
     xmlns:local="using:Panther.WindowsApp.Views.Controls"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    mc:Ignorable="d">
+    xmlns:vm="using:Panther.WindowsApp.ViewModels"
+    xmlns:cv="using:Panther.WindowsApp.Converters"
+    mc:Ignorable="d"
+    d:DataContext="{d:DesignInstance vm:PlayerViewModel}">
 
     <Grid>
+        <VisualStateManager.VisualStateGroups>
+            <VisualStateGroup x:Name="WindowStates">
+                <VisualState x:Name="NarrowState">
+                    <VisualState.StateTriggers>
+                        <AdaptiveTrigger MinWindowWidth="0" />
+                    </VisualState.StateTriggers>
+                    <VisualState.Setters>
+                        <Setter Target="AlbumArt.Visibility" Value="Collapsed" />
+                    </VisualState.Setters>
+                </VisualState>
+                <VisualState x:Name="WideState">
+                    <VisualState.StateTriggers>
+                        <AdaptiveTrigger MinWindowWidth="600" />
+                    </VisualState.StateTriggers>
+                    <VisualState.Setters>
+                        <Setter Target="AlbumArt.Visibility" Value="Visible" />
+                    </VisualState.Setters>
+                </VisualState>
+            </VisualStateGroup>
+        </VisualStateManager.VisualStateGroups>
+
         <Grid.RowDefinitions>
-            <RowDefinition Height="8" />
-            <RowDefinition Height="8" />
-            <RowDefinition Height="Auto" />
+            <RowDefinition Height="14" />
+            <RowDefinition Height="4" />
+            <RowDefinition Height="14" />
+            <RowDefinition />
         </Grid.RowDefinitions>
+
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition />
+            <ColumnDefinition Width="Auto" />
+            <ColumnDefinition />
+        </Grid.ColumnDefinitions>
+
+        <Rectangle x:Name="AlbumArt"
+                   Grid.Row="2"
+                   Grid.RowSpan="2"
+                   HorizontalAlignment="Left"
+                   Width="100"
+                   Fill="{ThemeResource AccentAAFillColorDefaultBrush}" />
+
+        <!-- Playback Progress Slider -->
+        <Slider Grid.ColumnSpan="5"
+                Grid.RowSpan="3"
+                IsEnabled="{x:Bind ViewModel.IsTrackLoaded}"
+                Minimum="0"
+                Maximum="{x:Bind ViewModel.TotalDuration.TotalSeconds}"/>
+
+        <!-- Player Controls -->
+        <StackPanel Grid.Row="3" Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Top">
+            
+            <!-- Shuffle Button -->
+            <ToggleButton Style="{StaticResource PlayerFlat40ToggleButtonStyle}"
+                          IsChecked="{x:Bind ViewModel.IsShuffleActive, Mode=TwoWay}">
+                <FontIcon Style="{StaticResource PlayerButtonPathIcon}"
+                          Glyph="{x:Bind cv:GlyphConverters.GetShuffleGlyph(ViewModel.IsShuffleActive), Mode=OneWay}" />
+            </ToggleButton>
+            
+            <!-- Previous Button -->
+            <Button Style="{StaticResource PlayerFlat48ButtonStyle}"
+                    Command="{x:Bind ViewModel.PreviousTrackCommand}">
+                <FontIcon Style="{StaticResource PlayerButtonPathIcon}"
+                          Glyph="&#xEEA1;" />
+            </Button>
+            
+            <!-- Play Button -->
+            <Button Style="{StaticResource PlayerFlatPlayButtonStyle}">
+                <Border BorderThickness="1.3"
+                        CornerRadius="24"
+                        Width="48"
+                        Height="48"
+                        Margin="0,2"
+                        BorderBrush="{Binding Foreground, ElementName=PlayGlyph}">
+                    <FontIcon x:Name="PlayGlyph"
+                              Style="{StaticResource PlayerButtonPathIcon}"
+                              Glyph="{x:Bind cv:GlyphConverters.GetPlayPauseGlyph(ViewModel.IsPlaying), Mode=OneWay}"/>
+                </Border>
+            </Button>
+            
+            <!-- Next Button -->
+            <Button Style="{StaticResource PlayerFlat48ButtonStyle}"
+                    Command="{x:Bind ViewModel.NextTrackCommand}">
+                <FontIcon Style="{StaticResource PlayerButtonPathIcon}"
+                          Glyph="&#xE82D;" />
+            </Button>
+            
+            <!-- Repeat Button -->
+            <ToggleButton Style="{StaticResource PlayerFlat40ToggleButtonStyle}"
+                          IsChecked="{x:Bind ViewModel.IsRepeatActive, Mode=OneWay}"
+                          Command="{x:Bind ViewModel.ToggleRepeatCommand}">
+                <FontIcon Style="{StaticResource PlayerButtonPathIcon}"
+                          Glyph="{x:Bind cv:GlyphConverters.GetRepeatGlyph(ViewModel.RepeatMode), Mode=OneWay}" />
+            </ToggleButton>
+        </StackPanel>
     </Grid>
 </UserControl>

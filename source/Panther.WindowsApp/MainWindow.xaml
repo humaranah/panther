@@ -19,41 +19,12 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="28" />
             <RowDefinition />
-            <RowDefinition Height="110" />
+            <RowDefinition Height="14" />
+            <RowDefinition Height="100" />
         </Grid.RowDefinitions>
 
         <controls:PantherTitleBar />
-
-        <NavigationView PaneTitle="Panther" Grid.Row="1" x:Name="NavView" PaneDisplayMode="Top"
-                        IsSettingsVisible="True" OpenPaneLength="240" ItemInvoked="NavView_ItemInvoked">
-
-            <NavigationView.MenuItems>
-                <NavigationViewItem x:Uid="NavItemNowPlaying" Icon="Play" Tag="NowPlaying" />
-                <NavigationViewItemSeparator />
-                <NavigationViewItem x:Uid="NavItemArtists" Tag="Artists">
-                    <NavigationViewItem.Icon>
-                        <PathIcon Data="{StaticResource ArtistsIconPath}" />
-                    </NavigationViewItem.Icon>
-                </NavigationViewItem>
-                <NavigationViewItem x:Uid="NavItemAlbums" Tag="Albums">
-                    <NavigationViewItem.Icon>
-                        <PathIcon Data="{StaticResource DisksIconPath}" />
-                    </NavigationViewItem.Icon>
-                </NavigationViewItem>
-                <NavigationViewItem x:Uid="NavItemSongs" Tag="Songs">
-                    <NavigationViewItem.Icon>
-                        <PathIcon Data="{StaticResource TracksIconPath}" />
-                    </NavigationViewItem.Icon>
-                </NavigationViewItem>
-                <NavigationViewItemSeparator />
-                <NavigationViewItem x:Uid="NavItemPlaylists" Icon="List" Tag="Playlists" />
-            </NavigationView.MenuItems>
-
-            <Frame x:Name="ContentFrame"/>
-        </NavigationView>
-
-        <Border Grid.Row="2" BorderThickness="0,1,0,0" BorderBrush="{ThemeResource AppBarBorderThemeBrush}">
-            <controls:PlayerControl Grid.ColumnSpan="2" />
-        </Border>
+        <controls:NavigationControl Grid.Row="1" Grid.RowSpan="2" />
+        <controls:PlayerControl Grid.Row="2" Grid.RowSpan="2" />
     </Grid>
 </Window>

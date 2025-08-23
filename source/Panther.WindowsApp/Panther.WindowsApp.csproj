@@ -12,6 +12,16 @@
     <EnableMsixTooling>true</EnableMsixTooling>
     <Nullable>enable</Nullable>
   </PropertyGroup>
+  <ItemGroup>
+    <None Remove="Resources\ColorResources.xaml" />
+    <None Remove="Resources\StyleResources.xaml" />
+    <None Remove="Views\Controls\NavigationControl.xaml" />
+    <None Remove="Views\Pages\AlbumsPage.xaml" />
+    <None Remove="Views\Pages\ArtistsPage.xaml" />
+    <None Remove="Views\Pages\PlaylistsPage.xaml" />
+    <None Remove="Views\Pages\SettingsPage.xaml" />
+    <None Remove="Views\Pages\SongsPage.xaml" />
+  </ItemGroup>
 
   <ItemGroup>
     <Manifest Include="$(ApplicationManifest)" />
@@ -28,9 +38,13 @@
   <ItemGroup>
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
     <PackageReference Include="CommunityToolkit.WinUI.Behaviors" Version="8.2.250402" />
+    <PackageReference Include="CommunityToolkit.WinUI.Triggers" Version="8.2.250402" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.1" />
     <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.26100.4188" />
     <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.7.250606001" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Panther.Core\Panther.Core.csproj" />
   </ItemGroup>
   <ItemGroup>
     <Content Update="Assets\Fonts\FluentSystemIcons-Filled.ttf">
@@ -48,6 +62,41 @@
     <Content Update="Assets\Visual\PantherLogo.svg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <Page Update="Views\Pages\SettingsPage.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+  </ItemGroup>
+  <ItemGroup>
+    <Page Update="Resources\ColorResources.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+  </ItemGroup>
+  <ItemGroup>
+    <Page Update="Resources\StyleResources.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+  </ItemGroup>
+  <ItemGroup>
+    <Page Update="Views\Controls\NavigationControl.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+  </ItemGroup>
+  <ItemGroup>
+    <Page Update="Views\Pages\PlaylistsPage.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+  </ItemGroup>
+  <ItemGroup>
+    <Page Update="Views\Pages\SongsPage.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+  </ItemGroup>
+  <ItemGroup>
+    <Page Update="Views\Pages\AlbumsPage.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
   </ItemGroup>
   <ItemGroup>
     <Page Update="Resources\IconResources.xaml">
@@ -76,6 +125,11 @@
   </ItemGroup>
   <ItemGroup>
     <Page Update="Views\CustomTitleBar.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+  </ItemGroup>
+  <ItemGroup>
+    <Page Update="Views\Pages\ArtistsPage.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
   </ItemGroup>

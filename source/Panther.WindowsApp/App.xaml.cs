@@ -29,6 +29,8 @@ public partial class App : Application
         InitializeComponent();
     }
 
+    public static Window MainWindow => ((App)Current)._window!;
+
     public static IServiceProvider Services { get; private set; } = null!;
 
     /// <summary>
@@ -46,6 +48,7 @@ public partial class App : Application
         services
             .AddSingleton(new ResourceLoader())
             .AddSingleton<INavigationService, NavigationService>()
-            .AddTransient<MainViewModel>();
+            .AddTransient<NavigationViewModel>()
+            .AddTransient<PlayerViewModel>();
     }
 }
