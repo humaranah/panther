@@ -12,20 +12,14 @@ A music player just the way I like it.
 
 ## Getting Started
 
-1. Clone the repository:
-
-    ```ps
-    git clone https://github.com/yourusername/panther.git
-    ```
-
-2. Install dependencies:
+1. Install dependencies:
 
     ```ps
     cd panther
     dotnet restore
     ```
 
-3. Build the application:
+2. Build the application:
 
     ```ps
     dotnet build
