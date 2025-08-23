@@ -1,7 +1,7 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.Windows.ApplicationModel.Resources;
-using Panther.WindowsApp.Models;
+using Panther.WindowsApp.Services;
 using Panther.WindowsApp.ViewModels;
 using System;
 

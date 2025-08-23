@@ -1,6 +1,6 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using Panther.WindowsApp.Models;
+using Panther.WindowsApp.Services;
 using Panther.WindowsApp.Views.Pages;
 
 namespace Panther.WindowsApp.ViewModels;

@@ -1,4 +1,4 @@
-﻿using Panther.WindowsApp.Models.Enums;
+﻿using Panther.Core.Enums;
 
 namespace Panther.WindowsApp.Converters;
 

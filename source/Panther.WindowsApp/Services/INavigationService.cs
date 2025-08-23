@@ -1,7 +1,7 @@
 ﻿using Microsoft.UI.Xaml.Controls;
 using System;
 
-namespace Panther.WindowsApp.Models;
+namespace Panther.WindowsApp.Services;
 
 public interface INavigationService
 {

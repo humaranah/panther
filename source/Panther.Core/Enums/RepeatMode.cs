@@ -1,4 +1,4 @@
-﻿namespace Panther.WindowsApp.Models.Enums;
+﻿namespace Panther.Core.Enums;
 
 public enum RepeatMode
 {

@@ -1,7 +1,7 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Panther.Core.Enums;
 using Panther.Core.Models;
-using Panther.WindowsApp.Models.Enums;
 using System;
 using System.Threading.Tasks;
 
