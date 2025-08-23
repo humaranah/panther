@@ -14,21 +14,21 @@ A music player just the way I like it.
 
 1. Clone the repository:
 
-    ```bash
+    ```ps
     git clone https://github.com/yourusername/panther.git
     ```
 
 2. Install dependencies:
 
-    ```bash
+    ```ps
     cd panther
-    npm install
+    dotnet restore
     ```
 
-3. Run the application:
+3. Build the application:
 
-    ```bash
-    npm start
+    ```ps
+    dotnet build
     ```
 
 ## Screenshot
