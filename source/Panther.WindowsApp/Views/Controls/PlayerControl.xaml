@@ -11,6 +11,10 @@
     mc:Ignorable="d"
     d:DataContext="{d:DesignInstance vm:PlayerViewModel}">
 
+    <UserControl.Resources>
+        <cv:SecondsToTimeConverter x:Key="SecondsToTime" />
+    </UserControl.Resources>
+
     <Grid>
         <VisualStateManager.VisualStateGroups>
             <VisualStateGroup x:Name="WindowStates">
@@ -56,9 +60,12 @@
         <!-- Playback Progress Slider -->
         <Slider Grid.ColumnSpan="5"
                 Grid.RowSpan="3"
-                IsEnabled="{x:Bind ViewModel.IsTrackLoaded}"
+                IsEnabled="{x:Bind ViewModel.IsTrackLoaded, Mode=OneWay}"
                 Minimum="0"
-                Maximum="{x:Bind ViewModel.TotalDuration.TotalSeconds}"/>
+                Maximum="{x:Bind ViewModel.TotalDurationInSeconds, Mode=OneWay}"
+                Value="{x:Bind ViewModel.CurrentPositionInSeconds, Mode=TwoWay}"
+                IsThumbToolTipEnabled="{x:Bind ViewModel.IsTrackLoaded, Mode=OneWay}"
+                ThumbToolTipValueConverter="{StaticResource SecondsToTime}"/>
 
         <!-- Player Controls -->
         <StackPanel Grid.Row="3" Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Top">

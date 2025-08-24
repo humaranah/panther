@@ -10,6 +10,7 @@ namespace Panther.WindowsApp.ViewModels;
 public partial class PlayerViewModel : ObservableObject
 {
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsTrackLoaded))]
     private Track? _currentTrack;
 
     [ObservableProperty]
@@ -22,24 +23,32 @@ public partial class PlayerViewModel : ObservableObject
     private bool _isMuted;
 
     [ObservableProperty]
-    private TimeSpan _currentPosition;
+    [NotifyPropertyChangedFor(nameof(TotalDurationInSeconds))]
+    private TimeSpan _totalDuration;
 
     [ObservableProperty]
-    private TimeSpan _totalDuration;
+    [NotifyPropertyChangedFor(nameof(CurrentPositionInSeconds))]
+    private TimeSpan _currentPosition;
 
     [ObservableProperty]
     private bool _isShuffleActive;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsRepeatActive))]
     private RepeatMode _repeatMode;
 
     public PlayerViewModel()
     {
         // Initialize properties or load data if necessary
     }
-
     public bool IsTrackLoaded => CurrentTrack != null;
     public bool IsRepeatActive => RepeatMode != RepeatMode.None;
+    public int TotalDurationInSeconds => (int)TotalDuration.TotalSeconds;
+    public int CurrentPositionInSeconds
+    {
+        get => (int)CurrentPosition.TotalSeconds;
+        set => CurrentPosition = TimeSpan.FromSeconds(value);
+    }
 
     [RelayCommand]
     private async Task LoadTrackAsync(Track track)
@@ -111,6 +120,5 @@ public partial class PlayerViewModel : ObservableObject
             RepeatMode.Single => RepeatMode.None,
             _ => RepeatMode.None
         };
-        OnPropertyChanged(nameof(IsRepeatActive));
     }
 }
