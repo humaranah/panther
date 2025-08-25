@@ -1,8 +1,13 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.UI.Xaml;
 using Microsoft.Windows.ApplicationModel.Resources;
+using Panther.Core;
+using Panther.Infrastructure;
 using Panther.WindowsApp.Services;
 using Panther.WindowsApp.ViewModels;
+using Serilog;
+using Serilog.Events;
 using System;
 
 // To learn more about WinUI, the WinUI project structure,
@@ -23,10 +28,26 @@ public partial class App : Application
     /// </summary>
     public App()
     {
-        var services = new ServiceCollection();
-        ConfigureServices(services);
-        Services = services.BuildServiceProvider();
-        InitializeComponent();
+        Log.Logger = new LoggerConfiguration()
+            .MinimumLevel.Debug()
+            .WriteTo.File("logs/log.txt",
+                rollingInterval: RollingInterval.Month,
+                restrictedToMinimumLevel: LogEventLevel.Warning)
+            .WriteTo.Debug(restrictedToMinimumLevel: LogEventLevel.Debug)
+            .CreateLogger();
+
+        try
+        {
+            var services = new ServiceCollection();
+            ConfigureServices(services);
+            Services = services.BuildServiceProvider();
+            InitializeComponent();
+        }
+        catch (Exception ex)
+        {
+            Log.Fatal(ex, "Application start-up failed");
+            throw;
+        }
     }
 
     public static Window MainWindow => ((App)Current)._window!;
@@ -37,8 +58,9 @@ public partial class App : Application
     /// Invoked when the application is launched.
     /// </summary>
     /// <param name="args">Details about the launch request and process.</param>
-    protected override void OnLaunched(LaunchActivatedEventArgs args)
+    protected override async void OnLaunched(LaunchActivatedEventArgs args)
     {
+        await Services.GetRequiredService<IMusicPlayer>().InitializeAsync();
         _window = new MainWindow();
         _window.Activate();
     }
@@ -46,9 +68,11 @@ public partial class App : Application
     private static void ConfigureServices(IServiceCollection services)
     {
         services
+            .AddPantherComponents()
             .AddSingleton(new ResourceLoader())
             .AddSingleton<INavigationService, NavigationService>()
             .AddTransient<NavigationViewModel>()
-            .AddTransient<PlayerViewModel>();
+            .AddTransient<PlayerViewModel>()
+            .AddLogging(builder => builder.ClearProviders().AddSerilog(Log.Logger));
     }
 }

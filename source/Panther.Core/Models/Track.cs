@@ -1,11 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Panther.Core.Models;
+﻿namespace Panther.Core.Models;
 
 public class Track
 {
+    public string Source { get; set; } = null!;
+    public double Duration { get; set; }
 }

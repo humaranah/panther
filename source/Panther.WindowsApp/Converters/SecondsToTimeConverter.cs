@@ -7,7 +7,7 @@ public partial class SecondsToTimeConverter : IValueConverter
 {
     public object Convert(object value, Type targetType, object parameter, string language)
     {
-        if (value is int seconds)
+        if (value is double seconds)
         {
             TimeSpan timeSpan = TimeSpan.FromSeconds(seconds);
             return timeSpan.Hours > 0
@@ -19,6 +19,10 @@ public partial class SecondsToTimeConverter : IValueConverter
 
     public object ConvertBack(object value, Type targetType, object parameter, string language)
     {
-        throw new NotImplementedException();
+        if (value is string timeString && TimeSpan.TryParse(timeString, out TimeSpan timeSpan))
+        {
+            return timeSpan.TotalSeconds;
+        }
+        return 0;
     }
 }

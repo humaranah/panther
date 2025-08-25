@@ -17,6 +17,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Panther.Core", "source\Pant
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Panther.WindowsApp", "source\Panther.WindowsApp\Panther.WindowsApp.csproj", "{CE53608F-5DDB-4332-BE2E-F8DB13CF62FB}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Panther.Infrastructure", "source\Panther.Infrastructure\Panther.Infrastructure.csproj", "{142600F0-ADC1-442D-86B1-89A7A4088FC7}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -33,6 +35,10 @@ Global
 		{CE53608F-5DDB-4332-BE2E-F8DB13CF62FB}.Release|Any CPU.ActiveCfg = Release|x64
 		{CE53608F-5DDB-4332-BE2E-F8DB13CF62FB}.Release|Any CPU.Build.0 = Release|x64
 		{CE53608F-5DDB-4332-BE2E-F8DB13CF62FB}.Release|Any CPU.Deploy.0 = Release|x64
+		{142600F0-ADC1-442D-86B1-89A7A4088FC7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{142600F0-ADC1-442D-86B1-89A7A4088FC7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{142600F0-ADC1-442D-86B1-89A7A4088FC7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{142600F0-ADC1-442D-86B1-89A7A4088FC7}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -40,6 +46,7 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{64314233-385D-4F3A-8BAB-ED1111A035F7} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 		{CE53608F-5DDB-4332-BE2E-F8DB13CF62FB} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
+		{142600F0-ADC1-442D-86B1-89A7A4088FC7} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {B46259CD-46FC-4E02-BA97-5922C5A1C170}

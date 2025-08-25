@@ -12,6 +12,9 @@
     <EnableMsixTooling>true</EnableMsixTooling>
     <Nullable>enable</Nullable>
   </PropertyGroup>
+	<PropertyGroup>
+		<BassDllPath Condition=" '$(BASS_DLL_PATH)' != '' ">$(BASS_DLL_PATH)</BassDllPath>
+	</PropertyGroup>
   <ItemGroup>
     <None Remove="Resources\ColorResources.xaml" />
     <None Remove="Resources\StyleResources.xaml" />
@@ -40,10 +43,20 @@
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.8" />
     <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.26100.4188" />
     <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.7.250606001" />
+    <PackageReference Include="Serilog" Version="4.3.0" />
+    <PackageReference Include="Serilog.Extensions.Logging" Version="9.0.2" />
+    <PackageReference Include="Serilog.Sinks.Debug" Version="3.0.0" />
+    <PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Panther.Core\Panther.Core.csproj" />
+    <ProjectReference Include="..\Panther.Infrastructure\Panther.Infrastructure.csproj" />
   </ItemGroup>
+	<ItemGroup>
+		<None Include="$(BassDllPath)\bass.dll" Link="bass.dll">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</None>
+	</ItemGroup>
   <ItemGroup>
     <Content Update="Assets\Fonts\FluentSystemIcons-Filled.ttf">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
