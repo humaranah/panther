@@ -2,14 +2,13 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.UI.Xaml;
 using Microsoft.Windows.ApplicationModel.Resources;
-using Panther.Core;
 using Panther.Infrastructure;
+using Panther.Infrastructure.BassWrapper;
 using Panther.WindowsApp.Services;
 using Panther.WindowsApp.ViewModels;
 using Serilog;
 using Serilog.Events;
 using System;
-using System.Threading;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -21,7 +20,6 @@ namespace Panther.WindowsApp;
 /// </summary>
 public partial class App : Application
 {
-    private CancellationTokenSource? _tokenSource;
     private Window? _window;
 
     /// <summary>
@@ -43,6 +41,7 @@ public partial class App : Application
             var services = new ServiceCollection();
             ConfigureServices(services);
             Services = services.BuildServiceProvider();
+            InitializeServices();
             InitializeComponent();
         }
         catch (Exception ex)
@@ -60,19 +59,10 @@ public partial class App : Application
     /// Invoked when the application is launched.
     /// </summary>
     /// <param name="args">Details about the launch request and process.</param>
-    protected override async void OnLaunched(LaunchActivatedEventArgs args)
+    protected override void OnLaunched(LaunchActivatedEventArgs args)
     {
-        _tokenSource = new CancellationTokenSource();
-        await Services.GetRequiredService<IMusicPlayer>().InitializeAsync(_tokenSource.Token);
         _window = new MainWindow();
-        _window.Closed += OnWindowClosed;
         _window.Activate();
-    }
-
-    private void OnWindowClosed(object sender, WindowEventArgs args)
-    {
-        _tokenSource?.Cancel();
-        _tokenSource?.Dispose();
     }
 
     private static void ConfigureServices(IServiceCollection services)
@@ -81,8 +71,14 @@ public partial class App : Application
             .AddPantherComponents()
             .AddSingleton(new ResourceLoader())
             .AddSingleton<INavigationService, NavigationService>()
+            .AddTransient<IFilePickerService, FilePickerService>()
             .AddTransient<NavigationViewModel>()
             .AddTransient<PlayerViewModel>()
             .AddLogging(builder => builder.ClearProviders().AddSerilog(Log.Logger));
+    }
+
+    private static void InitializeServices()
+    {
+        Services.GetRequiredService<IBassNetService>().Register();
     }
 }

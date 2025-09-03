@@ -9,13 +9,43 @@
     mc:Ignorable="d">
 
     <Grid>
-        <Image VerticalAlignment="Center" HorizontalAlignment="Left" Height="20" Width="20" Margin="4,0">
+
+        <VisualStateManager.VisualStateGroups>
+            <VisualStateGroup x:Name="WindowStates">
+                <VisualState x:Name="NarrowState">
+                    <VisualState.StateTriggers>
+                        <AdaptiveTrigger MinWindowWidth="0" />
+                    </VisualState.StateTriggers>
+                    <VisualState.Setters>
+                        <Setter Target="TitleText.HorizontalAlignment" Value="Left" />
+                    </VisualState.Setters>
+                </VisualState>
+                <VisualState x:Name="WideState">
+                    <VisualState.StateTriggers>
+                        <AdaptiveTrigger MinWindowWidth="600" />
+                    </VisualState.StateTriggers>
+                    <VisualState.Setters>
+                        <Setter Target="TitleText.HorizontalAlignment" Value="Center" />
+                    </VisualState.Setters>
+                </VisualState>
+            </VisualStateGroup>
+        </VisualStateManager.VisualStateGroups>
+        
+        <Image VerticalAlignment="Center"
+               HorizontalAlignment="Left"
+               Height="20"
+               Width="20"
+               Margin="4,0">
             <Image.Source>
                 <SvgImageSource UriSource="ms-appx:///Assets/Visual/PantherLogo.svg"/>
             </Image.Source>
         </Image>
 
-        <TextBlock Text="Panther Music Player" FontSize="16" VerticalAlignment="Center"
-                   HorizontalAlignment="Center" Margin="5,0,0,0"/>
+        <TextBlock x:Name="TitleText"
+                   Margin="30,0"
+                   Text="Panther Music Player"
+                   FontSize="14"
+                   VerticalAlignment="Center"
+                   HorizontalAlignment="Center" />
     </Grid>
 </UserControl>

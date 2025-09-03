@@ -1,8 +1,11 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Microsoft.UI.Xaml.Media;
 using Panther.Core;
 using Panther.Core.Enums;
 using Panther.Core.Models;
+using Panther.WindowsApp.Converters;
+using Panther.WindowsApp.Services;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -11,16 +14,38 @@ namespace Panther.WindowsApp.ViewModels;
 
 public partial class PlayerViewModel : ObservableObject
 {
-    const double PositionThreshold = 2;
+    private const double DefaultPositionThreshold = 2;
 
     private readonly IMusicPlayer _musicPlayer;
+    private readonly ITrackInfoProvider _trackProvider;
+    private readonly IFilePickerService _filePickerService;
+
+    public PlayerViewModel(
+        IMusicPlayer musicPlayer,
+        ITrackInfoProvider trackProvider,
+        IFilePickerService filePickerService)
+    {
+        _musicPlayer = musicPlayer;
+        _musicPlayer.PositionChanged += OnPlayerPositionChanged;
+        _musicPlayer.PlaybackStateChanged += OnPlayerStateChanged;
+        _musicPlayer.TrackChanged += OnPlayerTrackChanged;
+        _musicPlayer.PlaybackEnded += OnPlayerPlaybackEnded;
+        _trackProvider = trackProvider;
+        _filePickerService = filePickerService;
+    }
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(IsTrackLoaded))]
-    private Track? _currentTrack;
+    [NotifyPropertyChangedFor(nameof(IsTrackLoaded), nameof(TrackTitle), nameof(TrackArtist))]
+    private TrackInfo? _currentTrack;
 
     [ObservableProperty]
-    private int _volume = 50; // Default volume set to 50%
+    private int _volumePercent = 50;
+
+    partial void OnVolumePercentChanged(int value)
+    {
+        _musicPlayer.Volume = _volumePercent / 100f;
+        IsMuted = false;
+    }
 
     [ObservableProperty]
     private bool _isPlaying;
@@ -41,49 +66,49 @@ public partial class PlayerViewModel : ObservableObject
     [NotifyPropertyChangedFor(nameof(IsRepeatActive))]
     private RepeatMode _repeatMode;
 
-    public PlayerViewModel(IMusicPlayer musicPlayer)
+    [ObservableProperty]
+    private ImageSource? _albumArt;
+
+    public bool IsTrackLoaded => _musicPlayer.HasTrackLoaded && CurrentTrack != null;
+
+    public string TrackTitle => CurrentTrack?.Title ?? string.Empty;
+
+    public string TrackArtist => CurrentTrack?.Artists.Length switch
     {
-        _musicPlayer = musicPlayer;
-        _musicPlayer.PositionChanged += OnPlayerPositionChanged;
-        _musicPlayer.PlaybackStateChanged += OnPlayerStateChanged;
-        _musicPlayer.TrackChanged += OnPlayerTrackChanged;
-        _musicPlayer.PlaybackEnded += OnPlayerPlaybackEnded;
-    }
-    public bool IsTrackLoaded => CurrentTrack != null;
+        null or 0 => string.Empty,
+        1 => CurrentTrack.Artists[0],
+        _ => string.Join(", ", CurrentTrack.Artists)
+    };
+
     public bool IsRepeatActive => RepeatMode != RepeatMode.None;
 
     [RelayCommand]
-    private async Task LoadTrackAsync(Track track, CancellationToken token)
+    private async Task LoadTrackAsync(string source, CancellationToken token)
     {
-        await _musicPlayer.LoadTrackAsync(track.Source, token);
-        CurrentTrack = track;
-        CurrentPosition = 0;
+        await LoadTrackInternalAsync(source, token);
     }
 
     [RelayCommand]
-    private void PlayPause()
+    private async Task PlayPause(CancellationToken token)
     {
         if (!IsTrackLoaded)
-            return;
+        {
+            var file = await _filePickerService.PickSingleFileAsync();
+            if (file == null) return;
+            var trackLoaded = await LoadTrackInternalAsync(file.Path, token);
+            if (!trackLoaded) return;
+        }
         if (IsPlaying)
             _musicPlayer.Pause();
         else
             _musicPlayer.Play();
+        IsPlaying = !IsPlaying;
     }
 
     [RelayCommand]
     private void StopTrack()
     {
         _musicPlayer.Stop();
-    }
-
-    [RelayCommand]
-    private void SetVolume(int volume)
-    {
-        if (volume < 0 || volume > 100)
-            throw new ArgumentOutOfRangeException(nameof(volume), "Volume must be between 0 and 100.");
-        _musicPlayer.Volume = volume;
-        Volume = volume;
     }
 
     [RelayCommand]
@@ -97,7 +122,7 @@ public partial class PlayerViewModel : ObservableObject
     private void PreviousTrack()
     {
         if (!IsTrackLoaded) return;
-        if (CurrentPosition > PositionThreshold)
+        if (CurrentPosition > DefaultPositionThreshold)
         {
             _musicPlayer.Seek(0);
             CurrentPosition = 0;
@@ -110,7 +135,7 @@ public partial class PlayerViewModel : ObservableObject
     private void ToggleMute()
     {
         IsMuted = !IsMuted;
-        _musicPlayer.Volume = IsMuted ? 0 : Volume;
+        _musicPlayer.Volume = IsMuted ? 0f : VolumePercent / 100f;
     }
 
     [RelayCommand]
@@ -125,6 +150,17 @@ public partial class PlayerViewModel : ObservableObject
         };
     }
 
+    private async Task<bool> LoadTrackInternalAsync(string source, CancellationToken token)
+    {
+        var trackLoaded = await _musicPlayer.LoadTrackAsync(source, token);
+        if (!trackLoaded) return false;
+        CurrentTrack = _trackProvider.LoadFrom(source);
+        if (CurrentTrack == null) return false;
+        CurrentPosition = 0;
+        AlbumArt = await BitmapConverters.ConvertBytesToImageSource(CurrentTrack.AlbumArt);
+        return true;
+    }
+
     private void OnPlayerPositionChanged(object? sender, double position)
     {
         CurrentPosition = position;
@@ -137,10 +173,10 @@ public partial class PlayerViewModel : ObservableObject
             CurrentPosition = 0;
     }
 
-    private void OnPlayerTrackChanged(object? sender, Track? track)
+    private void OnPlayerTrackChanged(object? sender, TrackChange change)
     {
-        CurrentTrack = track;
-        TotalDuration = track?.Duration ?? 0;
+        // Load track here
+        TotalDuration = _musicPlayer.GetDurationInSeconds();
         CurrentPosition = 0;
     }
 

@@ -9,17 +9,36 @@ namespace Panther.WindowsApp.Services;
 
 public class FilePickerService : IFilePickerService
 {
-    public async Task<IReadOnlyList<StorageFile>> PickFilesAsync()
+    private readonly List<string> _lossyTypes =
+        [".mp3", ".aac", ".mp4", ".ogg", ".m4a", ".m4b", ".wma"];
+
+    private readonly List<string> _losslessTypes =
+        [".wav", ".flac", ".alac"];
+
+    public async Task<IReadOnlyList<StorageFile>> PickMultipleFilesAsync()
+    {
+        var picker = InitializeFilePicker();
+        return await picker.PickMultipleFilesAsync();
+    }
+
+    public async Task<StorageFile> PickSingleFileAsync()
+    {
+        var picker = InitializeFilePicker();
+        return await picker.PickSingleFileAsync();
+    }
+
+    private FileOpenPicker InitializeFilePicker()
     {
         var picker = new FileOpenPicker()
         {
             ViewMode = PickerViewMode.Thumbnail,
             SuggestedStartLocation = PickerLocationId.MusicLibrary,
-            FileTypeFilter = { ".mp3", ".wav", ".flac", ".aac", ".ogg", ".m4a" }
         };
+        _lossyTypes.ForEach(picker.FileTypeFilter.Add);
+        _losslessTypes.ForEach(picker.FileTypeFilter.Add);
+        picker.FileTypeFilter.Add("*");
         var hwnd = WindowNative.GetWindowHandle(App.MainWindow);
         InitializeWithWindow.Initialize(picker, hwnd);
-
-        return await picker.PickMultipleFilesAsync();
+        return picker;
     }
 }

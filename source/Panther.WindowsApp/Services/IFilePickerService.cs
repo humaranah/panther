@@ -6,5 +6,6 @@ namespace Panther.WindowsApp.Services;
 
 public interface IFilePickerService
 {
-    Task<IReadOnlyList<StorageFile>> PickFilesAsync();
+    Task<StorageFile> PickSingleFileAsync();
+    Task<IReadOnlyList<StorageFile>> PickMultipleFilesAsync();
 }
