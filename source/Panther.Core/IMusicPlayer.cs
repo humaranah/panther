@@ -15,8 +15,8 @@ public interface IMusicPlayer
     double Position { get; }
     PlaybackState PlaybackState { get; }
 
-    Task InitializeAsync();
-    Task LoadTrackAsync(string sourceString);
+    Task InitializeAsync(CancellationToken token);
+    Task LoadTrackAsync(string sourceString, CancellationToken token);
     void Play();
     void Pause();
     void Stop();

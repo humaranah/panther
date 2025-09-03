@@ -2,8 +2,8 @@
 using Panther.Core;
 using Panther.Core.Enums;
 using Panther.Core.Models;
+using Panther.Infrastructure.BassWrapper;
 using Panther.Infrastructure.Constants;
-using Panther.Infrastructure.Models;
 using Un4seen.Bass;
 using Timer = System.Timers.Timer;
 
@@ -11,9 +11,11 @@ namespace Panther.Infrastructure;
 
 public sealed class LocalMusicPlayer : IMusicPlayer, IDisposable
 {
-    private readonly Timer _positionTimer;
+    private readonly IBassProcessor _bass;
     private readonly ILogger<LocalMusicPlayer> _logger;
-    private ChannelHandle _handle;
+
+    private readonly Timer _positionTimer;
+    private IBassChannel? _channel;
     private Track? _trackInfo;
     private PlaybackState _playbackState;
 
@@ -22,19 +24,21 @@ public sealed class LocalMusicPlayer : IMusicPlayer, IDisposable
     public event EventHandler<Track?>? TrackChanged;
     public event EventHandler? PlaybackEnded;
 
-    public LocalMusicPlayer(ILogger<LocalMusicPlayer> logger)
+    public LocalMusicPlayer(
+        IBassProcessor bass,
+        IBassNetService bassNet,
+        ILogger<LocalMusicPlayer> logger)
     {
+        _bass = bass;
         _logger = logger;
-        _logger.LogDebug("Registering {InternalName}...", BassNet.InternalName);
-        BassNet.Registration(BassCredentials.Email, BassCredentials.Key);
-        _logger.LogDebug("Bass.Net registered successfully");
+        bassNet.Register(BassCredentials.Email, BassCredentials.Key);
         _positionTimer = InitializeTimer();
     }
 
     public int Volume
     {
-        get => (int)(Bass.BASS_GetVolume() * 100);
-        set => Bass.BASS_SetVolume(value / 100f);
+        get => (int)(_bass.GetVolume() * 100);
+        set => _bass.SetVolume(value / 100f);
     }
 
     public Track? TrackInfo
@@ -47,136 +51,137 @@ public sealed class LocalMusicPlayer : IMusicPlayer, IDisposable
         }
     }
 
-    public double Position
-    {
-        get
-        {
-            var position = Bass.BASS_ChannelGetPosition(_handle);
-            return Bass.BASS_ChannelBytes2Seconds(_handle, position);
-        }
-    }
+    public double Position => _channel?.GetPositionInSeconds() ?? 0;
 
     public PlaybackState PlaybackState
     {
         get => _playbackState;
         private set
         {
-            _playbackState = value;
-            PlaybackStateChanged?.Invoke(this, value);
+            if (value != _playbackState)
+            {
+                _playbackState = value;
+                PlaybackStateChanged?.Invoke(this, value);
+            }
         }
     }
 
     public void Dispose()
     {
-        Bass.BASS_StreamFree(_handle);
-        Bass.BASS_Free();
+        _channel?.Dispose();
+        _bass.Free();
         GC.SuppressFinalize(this);
     }
 
-    public async Task InitializeAsync()
+    public async Task InitializeAsync(CancellationToken token)
     {
-        await Task.Run(() =>
+        try
         {
-            if (Bass.BASS_IsStarted() != 0) return;
-            if (!Bass.BASS_Init(-1, 44100, BASSInit.BASS_DEVICE_DEFAULT, nint.Zero))
-            {
-                var errorCode = Bass.BASS_ErrorGetCode();
-                _logger.LogError("BASS initialization error: {ErrorCode}", errorCode);
-            }
-            var device = Bass.BASS_GetDevice();
-            _logger.LogDebug("BASS initialized successfully: {@BassInfo}", Bass.BASS_GetDeviceInfo(device));
-        });
+            await Task.Run(() => InitializeInternal(token), token);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error initializing BASS");
+            throw;
+        }
     }
 
-    public async Task LoadTrackAsync(string sourceString)
+    private void InitializeInternal(CancellationToken token)
     {
-        if (PlaybackState != PlaybackState.Stopped)
-            PlaybackState = PlaybackState.Stopped;
-        if (!_handle.IsEmpty && !Bass.BASS_StreamFree(_handle))
+        token.ThrowIfCancellationRequested();
+        _bass.Init(-1, 44100, BASSInit.BASS_DEVICE_DEFAULT, nint.Zero);
+    }
+
+    public async Task LoadTrackAsync(string sourceString, CancellationToken token)
+    {
+        PlaybackState = PlaybackState.Stopped;
+        try
         {
-            _logger.LogError("Error unloading track: {ErrorCode}", Bass.BASS_ErrorGetCode());
-            return;
+            await Task.Run(() => LoadTrackInternal(sourceString, token), token);
         }
-        _handle = await Task.Run(
-            () => Bass.BASS_StreamCreateFile(sourceString, 0L, 0L, BASSFlag.BASS_DEFAULT));
-        if (_handle.IsEmpty)
+        catch (Exception ex)
         {
-            var errorCode = Bass.BASS_ErrorGetCode();
-            _logger.LogError("Error loading track {SourceString}: {ErrorCode}", sourceString, errorCode);
-            return;
+            _logger.LogError(ex, "Error loading track {SourceString}", sourceString);
+            throw;
         }
-        TrackInfo = new() { Source = sourceString };
+    }
+
+    private void LoadTrackInternal(string sourceString, CancellationToken token)
+    {
+        token.ThrowIfCancellationRequested();
+        _channel?.Free();
+        _channel = _bass.StreamCreateFile(sourceString);
+        TrackInfo = new() { Source = sourceString }; // Temporary, replace with actual metadata extraction
         _logger.LogDebug("Track {SourceString} loaded successfully", sourceString);
     }
 
     public void Pause()
     {
-        if (_handle.IsEmpty)
+        if (PlaybackState != PlaybackState.Playing) return;
+        try
         {
-            _logger.LogWarning("Cannot pause, no track loaded");
-            return;
+            _channel?.Pause();
+            _positionTimer.Stop();
+            PlaybackState = PlaybackState.Paused;
+            _logger.LogDebug("Playback paused");
         }
-        if (!Bass.BASS_ChannelPause(_handle))
+        catch (Exception ex)
         {
-            var errorCode = Bass.BASS_ErrorGetCode();
-            _logger.LogError("Error pausing playback: {ErrorCode}", errorCode);
-            return;
+            _logger.LogError(ex, "An error occurred trying to pause the current playback");
+            throw;
         }
-        _positionTimer.Stop();
-        PlaybackState = PlaybackState.Paused;
-        _logger.LogDebug("Playback paused");
     }
 
     public void Play()
     {
-        if (_handle.IsEmpty)
+        if (PlaybackState == PlaybackState.Playing) return;
+        try
         {
-            _logger.LogWarning("Cannot play, no track loaded");
-            return;
+            _channel?.Play();
+            _positionTimer.Start();
+            PlaybackState = PlaybackState.Playing;
+            _logger.LogDebug("Playback started");
         }
-        if (!Bass.BASS_ChannelPlay(_handle, false))
+        catch (Exception ex)
         {
-            var errorCode = Bass.BASS_ErrorGetCode();
-            _logger.LogError("Error starting playback: {ErrorCode}", errorCode);
-            return;
+            _logger.LogError(ex, "An error occurred trying to play the current track.");
+            throw;
         }
-        _positionTimer.Start();
-        PlaybackState = PlaybackState.Playing;
-        _logger.LogDebug("Playback started");
     }
 
     public void Stop()
     {
-        if (_handle.IsEmpty)
+        if (PlaybackState == PlaybackState.Stopped) return;
+        try
         {
-            _logger.LogWarning("Cannot stop, no track loaded");
-            return;
+            _channel?.Stop();
+            _positionTimer.Stop();
+            PlaybackState = PlaybackState.Stopped;
+            _logger.LogDebug("Playback stopped");
         }
-        if (!Bass.BASS_ChannelStop(_handle))
+        catch (Exception ex)
         {
-            var errorCode = Bass.BASS_ErrorGetCode();
-            _logger.LogError("Error stopping playback: {ErrorCode}", errorCode);
-            return;
+            _logger.LogError(ex, "An error occurred trying to stop the current track.");
+            throw;
         }
-        PlaybackState = PlaybackState.Stopped;
-        _logger.LogDebug("Playback stopped");
     }
 
     public void Seek(double position)
     {
-        if (_handle.IsEmpty)
+        if (_channel == null || _channel.Handle.IsEmpty)
         {
             _logger.LogWarning("Cannot seek, no track loaded");
             return;
         }
-        var bytePosition = Bass.BASS_ChannelSeconds2Bytes(_handle, position);
-        if (!Bass.BASS_ChannelSetPosition(_handle, bytePosition))
+        try
         {
-            var errorCode = Bass.BASS_ErrorGetCode();
-            _logger.LogError("Error seeking to position {Position}: {ErrorCode}", position, errorCode);
-            return;
+            _channel.SetPositionInSeconds(position);
         }
-        _logger.LogDebug("Seeked to position {Position}", position);
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "An error occurred trying to seek to position {Position}", position);
+            throw;
+        }
     }
 
     private Timer InitializeTimer()

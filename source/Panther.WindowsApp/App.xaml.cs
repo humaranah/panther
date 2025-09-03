@@ -9,6 +9,7 @@ using Panther.WindowsApp.ViewModels;
 using Serilog;
 using Serilog.Events;
 using System;
+using System.Threading;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -20,6 +21,7 @@ namespace Panther.WindowsApp;
 /// </summary>
 public partial class App : Application
 {
+    private CancellationTokenSource? _tokenSource;
     private Window? _window;
 
     /// <summary>
@@ -60,9 +62,17 @@ public partial class App : Application
     /// <param name="args">Details about the launch request and process.</param>
     protected override async void OnLaunched(LaunchActivatedEventArgs args)
     {
-        await Services.GetRequiredService<IMusicPlayer>().InitializeAsync();
+        _tokenSource = new CancellationTokenSource();
+        await Services.GetRequiredService<IMusicPlayer>().InitializeAsync(_tokenSource.Token);
         _window = new MainWindow();
+        _window.Closed += OnWindowClosed;
         _window.Activate();
+    }
+
+    private void OnWindowClosed(object sender, WindowEventArgs args)
+    {
+        _tokenSource?.Cancel();
+        _tokenSource?.Dispose();
     }
 
     private static void ConfigureServices(IServiceCollection services)

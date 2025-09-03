@@ -4,6 +4,7 @@ using Panther.Core;
 using Panther.Core.Enums;
 using Panther.Core.Models;
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Panther.WindowsApp.ViewModels;
@@ -52,9 +53,9 @@ public partial class PlayerViewModel : ObservableObject
     public bool IsRepeatActive => RepeatMode != RepeatMode.None;
 
     [RelayCommand]
-    private async Task LoadTrackAsync(Track track)
+    private async Task LoadTrackAsync(Track track, CancellationToken token)
     {
-        await _musicPlayer.LoadTrackAsync(track.Source);
+        await _musicPlayer.LoadTrackAsync(track.Source, token);
         CurrentTrack = track;
         CurrentPosition = 0;
     }
