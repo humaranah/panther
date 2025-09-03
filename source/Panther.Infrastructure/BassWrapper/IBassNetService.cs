@@ -2,5 +2,5 @@
 
 public interface IBassNetService
 {
-    void Register(string email, string key);
+    void Register();
 }

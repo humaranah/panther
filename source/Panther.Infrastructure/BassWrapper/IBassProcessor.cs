@@ -1,15 +1,15 @@
-﻿using Panther.Infrastructure.Models;
-using Un4seen.Bass;
+﻿using Un4seen.Bass;
 
 namespace Panther.Infrastructure.BassWrapper;
 
 public interface IBassProcessor
 {
-    void Init(int device, int freq, BASSInit flags, nint win);
-    void Free();
-    float GetVolume();
-    void SetVolume(float volume);
+    bool IsInitialized { get; }
 
-    IBassChannel StreamCreateFile(string file,
-        long offset = 0L, long length = 0L, BASSFlag flags = BASSFlag.BASS_DEFAULT);
+    bool Init();
+    bool Free();
+    float GetVolume();
+    bool SetVolume(float volume);
+
+    IBassChannel StreamCreateFile(string file, BASSFlag flags = BASSFlag.BASS_DEFAULT);
 }

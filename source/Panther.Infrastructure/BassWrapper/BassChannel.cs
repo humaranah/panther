@@ -1,75 +1,166 @@
-﻿using Panther.Infrastructure.Exceptions;
-using Panther.Infrastructure.Models;
+﻿using Panther.Infrastructure.BassWrapper.Extensions;
+using Panther.Infrastructure.BassWrapper.Models;
 using Un4seen.Bass;
 
 namespace Panther.Infrastructure.BassWrapper;
 
-public sealed class BassChannel(ChannelHandle handle) : IBassChannel
+public class BassChannel : IBassChannel, IBassNotifier
 {
-    public ChannelHandle Handle => handle;
+    private readonly SYNCPROC? _endSyncProc;
+    private BassHandle _endSyncHandle;
+    private BassHandle _handle;
+    private bool _disposed;
 
-    public void Play()
+    public event EventHandler? PlaybackEnded;
+    public event EventHandler<BassOperationError>? OperationError;
+
+    public BassChannel(BassHandle handle)
     {
-        if (handle.IsEmpty) return;
-        var success = Bass.BASS_ChannelPlay(handle, false);
-        if (!success)
+        _handle = handle;
+        _endSyncProc = (handle, channel, data, user) =>
         {
-            throw new BassException(Bass.BASS_ErrorGetCode());
-        }
-    }
-    public void Pause()
-    {
-        if (handle.IsEmpty) return;
-        var success = Bass.BASS_ChannelPause(handle);
-        if (!success)
-        {
-            throw new BassException(Bass.BASS_ErrorGetCode());
-        }
+            PlaybackEnded?.Invoke(this, EventArgs.Empty);
+        };
+        AttachEvents();
     }
 
-    public void Stop()
+    public BassHandle Handle => _handle;
+
+    public bool Play()
     {
-        if (handle.IsEmpty) return;
-        var success = Bass.BASS_ChannelStop(handle);
-        if (!success)
+        if (_handle.IsEmpty) return false;
+        if (!Bass.BASS_ChannelPlay(_handle, false))
         {
-            throw new BassException(Bass.BASS_ErrorGetCode());
+            this.GetErrorAndRaise("Failed to play channel", OperationError);
+            return false;
         }
+        return true;
+    }
+    public bool Pause()
+    {
+        if (_handle.IsEmpty) return false;
+        if (!Bass.BASS_ChannelPause(_handle))
+        {
+            this.GetErrorAndRaise("Failed to pause channel", OperationError);
+            return false;
+        }
+        return true;
+    }
+
+    public bool Stop()
+    {
+        if (_handle.IsEmpty) return false;
+        if (!Bass.BASS_ChannelStop(_handle))
+        {
+            this.GetErrorAndRaise("Failed to stop channel", OperationError);
+            return false;
+        }
+        return true;
+    }
+
+    public double GetChannelLengthInSeconds()
+    {
+        if (_handle.IsEmpty) return 0d;
+        var lengthBytes = Bass.BASS_ChannelGetLength(_handle);
+        if (lengthBytes < 0)
+        {
+            this.GetErrorAndRaise("Failed to get channel length", OperationError);
+            return 0d;
+        }
+        var seconds = Bass.BASS_ChannelBytes2Seconds(_handle, lengthBytes);
+        if (seconds < 0)
+        {
+            this.GetErrorAndRaise("Failed to convert channel length to seconds", OperationError);
+            return 0d;
+        }
+        return seconds;
     }
 
     public double GetPositionInSeconds()
     {
-        if (handle.IsEmpty) return 0;
-        var bytePosition = Bass.BASS_ChannelGetPosition(handle);
-        if (bytePosition == -1)
-            throw new BassException(Bass.BASS_ErrorGetCode());
-        if (bytePosition == 0) return 0;
-        var seconds = Bass.BASS_ChannelBytes2Seconds(handle, bytePosition);
+        if (_handle.IsEmpty) return 0d;
+        var positionBytes = Bass.BASS_ChannelGetPosition(_handle);
+        if (positionBytes < 0)
+        {
+            this.GetErrorAndRaise("Failed to get channel position", OperationError);
+            return 0d;
+        }
+        var seconds = Bass.BASS_ChannelBytes2Seconds(_handle, positionBytes);
         if (seconds < 0)
-            throw new BassException(Bass.BASS_ErrorGetCode());
+        {
+            this.GetErrorAndRaise("Failed to convert channel position to seconds", OperationError);
+            return 0d;
+        }
         return seconds;
     }
 
-    public void SetPositionInSeconds(double seconds)
+    public bool SetPositionInSeconds(double seconds)
     {
-        if (handle.IsEmpty) return;
-        var bytePosition = Bass.BASS_ChannelSeconds2Bytes(handle, seconds);
-        if (bytePosition == -1)
-            throw new BassException(Bass.BASS_ErrorGetCode());
-        var success = Bass.BASS_ChannelSetPosition(handle, bytePosition);
-        if (!success)
-            throw new BassException(Bass.BASS_ErrorGetCode());
+        if (_handle.IsEmpty) return false;
+        var positionBytes = Bass.BASS_ChannelSeconds2Bytes(_handle, seconds);
+        if (positionBytes < 0)
+        {
+            this.GetErrorAndRaise("Failed to convert seconds to channel position", OperationError);
+            return false;
+        }
+        if (!Bass.BASS_ChannelSetPosition(_handle, positionBytes))
+        {
+            this.GetErrorAndRaise("Failed to set channel position", OperationError);
+            return false;
+        }
+        return true;
     }
 
-    public void Free()
+    public bool Free()
     {
-        if (handle.IsEmpty) return;
-        var success = Bass.BASS_StreamFree(handle);
-        if (!success)
+        if (_handle.IsEmpty || !DetachEvents()) return false;
+        if (!Bass.BASS_StreamFree(_handle))
         {
-            throw new BassException(Bass.BASS_ErrorGetCode());
+            this.GetErrorAndRaise("Failed to free channel", OperationError);
+            _handle = BassHandle.Empty;
+            return false;
+        }
+        _handle = BassHandle.Empty;
+        return true;
+    }
+
+    public void Dispose()
+    {
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+
+    protected virtual void Dispose(bool disposing)
+    {
+        if (_disposed) return;
+        if (disposing)
+        {
+            Free();
+        }
+        _handle = BassHandle.Empty;
+        _disposed = true;
+    }
+
+    private void AttachEvents()
+    {
+        if (_handle.IsEmpty) return;
+        _endSyncHandle = Bass.BASS_ChannelSetSync(_handle, BASSSync.BASS_SYNC_END, 0, _endSyncProc, nint.Zero);
+        if (_endSyncHandle.IsEmpty)
+        {
+            this.GetErrorAndRaise("Failed to attach sync events", OperationError);
         }
     }
 
-    public void Dispose() => Free();
+    private bool DetachEvents()
+    {
+        if (_handle.IsEmpty) return false;
+        if (_endSyncHandle.IsEmpty) return true;
+        if (!Bass.BASS_ChannelRemoveSync(_handle, _endSyncHandle))
+        {
+            this.GetErrorAndRaise("Failed to remove end sync", OperationError);
+            return false;
+        }
+        _endSyncHandle = BassHandle.Empty;
+        return true;
+    }
 }

@@ -1,17 +1,21 @@
-﻿using Panther.Infrastructure.Models;
+﻿using Panther.Infrastructure.BassWrapper.Models;
 
 namespace Panther.Infrastructure.BassWrapper;
 
 public interface IBassChannel : IDisposable
 {
-    ChannelHandle Handle { get; }
+    event EventHandler? PlaybackEnded;
 
-    void Play();
-    void Pause();
-    void Stop();
+    BassHandle Handle { get; }
+
+    bool Play();
+    bool Pause();
+    bool Stop();
+
+    double GetChannelLengthInSeconds();
 
     double GetPositionInSeconds();
-    void SetPositionInSeconds(double seconds);
+    bool SetPositionInSeconds(double seconds);
 
-    void Free();
+    bool Free();
 }

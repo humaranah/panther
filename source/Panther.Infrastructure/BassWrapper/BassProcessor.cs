@@ -1,61 +1,83 @@
-﻿using Microsoft.Extensions.Logging;
-using Panther.Infrastructure.Exceptions;
-using Panther.Infrastructure.Models;
+﻿using Panther.Infrastructure.BassWrapper.Extensions;
+using Panther.Infrastructure.BassWrapper.Models;
 using Un4seen.Bass;
 
 namespace Panther.Infrastructure.BassWrapper;
 
-public sealed class BassProcessor(ILogger<BassProcessor> logger) : IBassProcessor, IDisposable
+public class BassProcessor : IBassProcessor, IBassNotifier, IDisposable
 {
-    public void Init(int device, int freq, BASSInit flags, nint win)
+    public event EventHandler<BassOperationError>? OperationError;
+
+    private bool _disposed;
+
+    public bool IsInitialized => Bass.BASS_IsStarted() > 0;
+
+    public bool Init()
     {
-        var success = Bass.BASS_Init(device, freq, flags, win);
-        if (!success)
+        if (IsInitialized) return true;
+        if (!Bass.BASS_Init(-1, 44100, BASSInit.BASS_DEVICE_STEREO, nint.Zero))
         {
-            switch (Bass.BASS_ErrorGetCode())
-            {
-                case BASSError.BASS_ERROR_ALREADY:
-                    logger.LogWarning("BASS is already initialized.");
-                    return;
-                default:
-                    throw new BassException(Bass.BASS_ErrorGetCode());
-            }
+            this.GetErrorAndRaise("Cannot initialize BASS.", OperationError);
+            return false;
         }
-        var currentDevice = Bass.BASS_GetDevice();
-        logger.LogDebug("BASS initialized successfully: {@BassInfo}", Bass.BASS_GetDeviceInfo(currentDevice));
+        return true;
     }
 
-    public void Free()
+    public bool Free()
     {
         if (!Bass.BASS_Free())
         {
-            var errorCode = Bass.BASS_ErrorGetCode();
-            switch (errorCode)
-            {
-                case BASSError.BASS_ERROR_INIT:
-                    logger.LogWarning("BASS was not initialized; it does not need to be unloaded.");
-                    break;
-                default:
-                    logger.LogError("Unable to unload BASS: {ErrorCode}", errorCode);
-                    break;
-            }
+            this.GetErrorAndRaise("Cannot free BASS.", OperationError);
+            return false;
         }
+        return true;
     }
 
-    public float GetVolume() => Bass.BASS_GetVolume();
-
-    public void SetVolume(float volume) => Bass.BASS_SetVolume(volume);
-
-    public IBassChannel StreamCreateFile(string file,
-        long offset = 0, long length = 0, BASSFlag flags = BASSFlag.BASS_DEFAULT)
+    public float GetVolume()
     {
-        ChannelHandle handle = Bass.BASS_StreamCreateFile(file, offset, length, flags);
+        var volume = Bass.BASS_GetVolume();
+        if (volume < 0)
+        {
+            this.GetErrorAndRaise("Failed to get volume", OperationError);
+            return 0f;
+        }
+        return volume;
+    }
+
+    public bool SetVolume(float volume)
+    {
+        if (!Bass.BASS_SetVolume(volume))
+        {
+            this.GetErrorAndRaise("Failed to set volume", OperationError);
+            return false;
+        }
+        return true;
+    }
+
+    public IBassChannel StreamCreateFile(string file, BASSFlag flags = BASSFlag.BASS_DEFAULT)
+    {
+        BassHandle handle = Bass.BASS_StreamCreateFile(file, 0, 0, flags);
         if (handle.IsEmpty)
         {
-            throw new BassException(Bass.BASS_ErrorGetCode());
+            this.GetErrorAndRaise($"Failed to create stream from file: {file}", OperationError);
+            return null!;
         }
         return new BassChannel(handle);
     }
 
-    public void Dispose() => Free();
+    protected virtual void Dispose(bool disposing)
+    {
+        if (_disposed) return;
+        if (disposing)
+        {
+            Free();
+        }
+        _disposed = true;
+    }
+
+    public void Dispose()
+    {
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
 }
