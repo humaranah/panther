@@ -7,18 +7,19 @@ public interface IMusicPlayer
 {
     event EventHandler<double>? PositionChanged;
     event EventHandler<PlaybackState>? PlaybackStateChanged;
-    event EventHandler<Track?>? TrackChanged;
+    event EventHandler<TrackChange>? TrackChanged;
     event EventHandler? PlaybackEnded;
 
-    int Volume { get; set; }
-    Track? TrackInfo { get; }
-    double Position { get; }
+    float Volume { get; set; }
     PlaybackState PlaybackState { get; }
+    bool HasTrackLoaded { get; }
 
-    Task InitializeAsync(CancellationToken token);
-    Task LoadTrackAsync(string sourceString, CancellationToken token);
+
+    Task<bool> LoadTrackAsync(string sourceString, CancellationToken token);
     void Play();
     void Pause();
     void Stop();
+    double GetDurationInSeconds();
+    double GetPositionInSeconds();
     void Seek(double position);
 }
