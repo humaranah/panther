@@ -1,9 +1,10 @@
 ﻿using Panther.Core.Models;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 
 namespace Panther.Core;
 
-public interface IPlayerQueueService
+public interface IPlayerQueueService : INotifyPropertyChanged
 {
     ObservableCollection<TrackInfo> History { get; }
     IReadOnlyCollection<TrackInfo> Source { get; }

@@ -20,6 +20,8 @@ public class PlayerQueueServiceTests
         new() { Source = "source3", Title = "title3" }
     ];
 
+    private readonly HashSet<string> _propertiesChanged = [];
+
     public PlayerQueueServiceTests()
     {
         _queueService = new(_randomMock.Object);
@@ -29,10 +31,13 @@ public class PlayerQueueServiceTests
     [Fact]
     public void GetNext_ShouldReturnNullIfQueueIsEmpty()
     {
+        // Arrange
+        AttachPropertyChangedEventHandler();
         // Act
         var result = _queueService.GetNext();
         // Assert
         result.ShouldBeNull();
+        _propertiesChanged.ShouldNotContain(nameof(_queueService.Current));
     }
 
     [Fact]
@@ -40,11 +45,13 @@ public class PlayerQueueServiceTests
     {
         // Arrange
         _queueService.AddToSource(TestItems);
+        AttachPropertyChangedEventHandler();
         var expected = TestItems[1];
         // Act
         var result = _queueService.GetNext();
         // Assert
         result.ShouldBe(expected);
+        _propertiesChanged.ShouldContain(nameof(_queueService.Current));
     }
 
     [Theory]
@@ -54,6 +61,7 @@ public class PlayerQueueServiceTests
     {
         // Arrange
         _queueService.AddToSource(TestItems); // This will pop the first remaining item
+        AttachPropertyChangedEventHandler();
         _queueService.IsShuffle = isShuffle;
         _randomMock.Setup(r => r.Next(It.IsAny<int>()))
             .Returns(expectedIndex - 1); // -1 because the first item is already popped
@@ -62,6 +70,9 @@ public class PlayerQueueServiceTests
         var result = _queueService.GetNext();
         // Assert
         result.ShouldBe(expected);
+        _propertiesChanged.ShouldContain(nameof(_queueService.Current));
+        if (isShuffle)
+            _propertiesChanged.ShouldContain(nameof(_queueService.IsShuffle));
     }
 
     [Theory]
@@ -71,6 +82,7 @@ public class PlayerQueueServiceTests
     {
         // Arrange
         _queueService.AddToSource(TestItems);
+        AttachPropertyChangedEventHandler();
         _queueService.IsRepeat = true;
         _queueService.IsShuffle = isShuffle;
         _queueService.GetNext(); // Move to second track
@@ -82,6 +94,11 @@ public class PlayerQueueServiceTests
         var result = _queueService.GetNext();
         // Assert
         result.ShouldBe(expected);
+        _queueService.IsRepeat.ShouldBeTrue();
+        _propertiesChanged.ShouldContain(nameof(_queueService.IsRepeat));
+        _propertiesChanged.ShouldContain(nameof(_queueService.Current));
+        if (isShuffle)
+            _propertiesChanged.ShouldContain(nameof(_queueService.IsShuffle));
     }
 
     [Theory]
@@ -91,12 +108,16 @@ public class PlayerQueueServiceTests
     {
         // Arrange
         _queueService.AddToSource(TestItem);
+        AttachPropertyChangedEventHandler();
         _queueService.IsShuffle = isShuffle;
         // Act
         var result = _queueService.GetNext();
         // Assert
         _queueService.IsRepeat.ShouldBeFalse();
         result.ShouldBeNull();
+        _propertiesChanged.ShouldNotContain(nameof(_queueService.Current));
+        if (isShuffle)
+            _propertiesChanged.ShouldContain(nameof(_queueService.IsShuffle));
     }
     #endregion
 
@@ -104,10 +125,13 @@ public class PlayerQueueServiceTests
     [Fact]
     public void GetPrevious_ShouldReturnNullIfNoHistory()
     {
+        // Arrange
+        AttachPropertyChangedEventHandler();
         // Act
         var result = _queueService.GetPrevious();
         // Assert
         result.ShouldBeNull();
+        _propertiesChanged.ShouldNotContain(nameof(_queueService.Current));
     }
 
     [Theory]
@@ -116,6 +140,7 @@ public class PlayerQueueServiceTests
     public void GetPrevious_ShouldReturnExpectedItem(bool isFirstElement)
     {
         // Arrange
+        AttachPropertyChangedEventHandler();
         _queueService.AddToSource(TestItems);
         if (!isFirstElement)
             _queueService.GetNext(); // Move to second track
@@ -124,6 +149,7 @@ public class PlayerQueueServiceTests
         var result = _queueService.GetPrevious();
         // Assert
         result.ShouldBe(expected);
+        _propertiesChanged.ShouldContain(nameof(_queueService.Current));
     }
     #endregion
 
@@ -131,9 +157,10 @@ public class PlayerQueueServiceTests
     [Theory]
     [InlineData(true)]
     [InlineData(false)]
-    public void Add_ShouldAddSingleItem(bool sourceWasEmpty)
+    public void AddToSource_ShouldAddSingleItem(bool sourceWasEmpty)
     {
         // Arrange
+        AttachPropertyChangedEventHandler();
         if (!sourceWasEmpty)
             _queueService.AddToSource(TestItems[0]);
         var itemToAdd = TestItem;
@@ -144,21 +171,22 @@ public class PlayerQueueServiceTests
         // Act
         _queueService.AddToSource(itemToAdd);
         // Assert
-
         _queueService.ShouldSatisfyAllConditions(
             q => q.Source.Count.ShouldBe(expectedSourceCount),
             q => q.Current.ShouldBe(expectedCurrent),
             q => q.IsEmpty.ShouldBeFalse(),
             q => q.History.Count.ShouldBe(1),
             q => q.Remaining.Count.ShouldBe(expectedRemainingCount));
+        _propertiesChanged.ShouldContain(nameof(_queueService.Current));
     }
 
     [Theory]
     [InlineData(true)]
     [InlineData(false)]
-    public void Add_ShouldAddMultipleItems(bool sourceWasEmpty)
+    public void AddToSource_ShouldAddMultipleItems(bool sourceWasEmpty)
     {
         // Arrange
+        AttachPropertyChangedEventHandler();
         if (!sourceWasEmpty)
             _queueService.AddToSource(TestItem);
         var itemsToAdd = TestItems;
@@ -176,16 +204,18 @@ public class PlayerQueueServiceTests
             x => x.Source.Count.ShouldBe(expectedSourceCount),
             x => x.History.Count.ShouldBe(1),
             x => x.Remaining.Count.ShouldBe(expectedRemainingCount));
+        _propertiesChanged.ShouldContain(nameof(_queueService.Current));
     }
 
     [Theory]
     [InlineData(true)]
     [InlineData(false)]
-    public void Add_ShouldNotAddEmptyList(bool sourceWasEmpty)
+    public void AddToSource_ShouldNotAddEmptyList(bool sourceWasEmpty)
     {
         // Arrange
         if (!sourceWasEmpty)
             _queueService.AddToSource(TestItems);
+        AttachPropertyChangedEventHandler();
         var initialSourceCount = _queueService.Source.Count;
         var expectedCurrent = sourceWasEmpty ? null : _queueService.Current;
         var expectedIsEmpty = sourceWasEmpty;
@@ -201,6 +231,7 @@ public class PlayerQueueServiceTests
             x => x.Source.Count.ShouldBe(initialSourceCount),
             x => x.History.Count.ShouldBe(expectedHistoryCount),
             x => x.Remaining.Count.ShouldBe(expectedRemainingCount));
+        _propertiesChanged.ShouldNotContain(nameof(_queueService.Current));
     }
     #endregion
 
@@ -213,6 +244,7 @@ public class PlayerQueueServiceTests
         // Arrange
         _queueService.AddToSource(TestItems);
         _queueService.GetNext(); // Move to second track
+        AttachPropertyChangedEventHandler();
         var itemToSet = itemInHistory ? TestItems[0] : TestItem;
         var expected = itemInHistory ? itemToSet : TestItems[1];
         // Act
@@ -220,18 +252,24 @@ public class PlayerQueueServiceTests
         // Assert
         result.ShouldBe(expected);
         _queueService.Current.ShouldBe(expected);
+        if (itemInHistory)
+            _propertiesChanged.ShouldContain(nameof(_queueService.Current));
+        else
+            _propertiesChanged.ShouldNotContain(nameof(_queueService.Current));
     }
 
     [Fact]
     public void SetCurrent_ShouldReturnNullIfSourceIsEmpty()
     {
         // Arrange
+        AttachPropertyChangedEventHandler();
         var itemToSet = TestItem;
         // Act
         var result = _queueService.SetCurrent(itemToSet);
         // Assert
         result.ShouldBeNull();
         _queueService.Current.ShouldBeNull();
+        _propertiesChanged.ShouldNotContain(nameof(_queueService.Current));
     }
     #endregion
 
@@ -241,22 +279,26 @@ public class PlayerQueueServiceTests
     {
         // Arrange
         _queueService.AddToSource(TestItems);
+        AttachPropertyChangedEventHandler();
         var itemToRemove = TestItem;
         // Act
         var result = _queueService.RemoveFromSource(itemToRemove);
         // Assert
         result.ShouldBeFalse();
+        _propertiesChanged.ShouldNotContain(nameof(_queueService.Current));
     }
 
     [Fact]
     public void RemoveFromSource_ShouldReturnFalseIfSourceIsEmpty()
     {
         // Arrange
+        AttachPropertyChangedEventHandler();
         var itemToRemove = TestItem;
         // Act
         var result = _queueService.RemoveFromSource(itemToRemove);
         // Assert
         result.ShouldBeFalse();
+        _propertiesChanged.ShouldNotContain(nameof(_queueService.Current));
     }
 
     [Fact]
@@ -264,6 +306,7 @@ public class PlayerQueueServiceTests
     {
         // Arrange
         _queueService.AddToSource(TestItems);
+        AttachPropertyChangedEventHandler();
         var itemToRemove = TestItems[1];
         var initialSourceCount = _queueService.Source.Count;
         var expectedSourceCount = initialSourceCount - 1;
@@ -278,30 +321,42 @@ public class PlayerQueueServiceTests
             x => x.Source.Count.ShouldBe(expectedSourceCount),
             x => x.History.Count.ShouldBe(1),
             x => x.Remaining.Count.ShouldBe(expectedRemainingCount));
+        _propertiesChanged.ShouldNotContain(nameof(_queueService.Current));
     }
 
-    [Theory]
-    [InlineData(3, 0, 0, 1)] // Remove first item when current is first item, current should move to next
-    [InlineData(3, 1, 0, 1)] // Remove first item when current is second item, current should stay the same
-    [InlineData(3, 1, 1, 0)] // Remove second item when current is second item, current should move to previous
-    [InlineData(3, 1, 2, 1)] // Remove last item when current is second item, current should stay the same
-    [InlineData(3, 2, 2, 1)] // Remove last item when current is last item, current should move to previous
-    [InlineData(1, 0, 0, null)] // Remove only item when current is only item, current should become null
-    public void RemoveFromSource_ShouldRemoveHistoryItemAndReturnTrue(
-        int historyCount, int currentIndex, int indexToRemove, int? expectedIndex)
+    [Fact]
+    public void RemoveFromSource_ShouldRemoveOnlyItemInHistory()
+    {
+        // Arrange
+        _queueService.AddToSource(TestItem);
+        AttachPropertyChangedEventHandler();
+        var itemToRemove = TestItem;
+        // Act
+        var result = _queueService.RemoveFromSource(itemToRemove);
+        // Assert
+        result.ShouldBeTrue();
+        _queueService.ShouldSatisfyAllConditions(
+            x => x.Current.ShouldBeNull(),
+            x => x.IsEmpty.ShouldBeTrue(),
+            x => x.Source.Count.ShouldBe(0),
+            x => x.History.Count.ShouldBe(0),
+            x => x.Remaining.Count.ShouldBe(0));
+        _propertiesChanged.ShouldContain(nameof(_queueService.Current));
+    }
+
+    [Fact]
+    public void RemoveFromSource_ShouldRemoveItemPreviousToCurrent()
     {
         // Arrange
         _queueService.AddToSource(TestItems); // Add 3 items and pop the first one to History
-        for (int i = 1; i < historyCount; i++)
-            _queueService.GetNext(); // Move to the desired history count
-        if (currentIndex < _queueService.History.Count)
-            _queueService.SetCurrent(_queueService.History[currentIndex]);
-        var itemToRemove = _queueService.History[indexToRemove];
+        _queueService.GetNext(); // Move to second item
+        AttachPropertyChangedEventHandler();
+        var itemToRemove = TestItems[0]; // Will remove the first item in History
         var initialSourceCount = _queueService.Source.Count;
-        var expectedCurrent = expectedIndex.HasValue ? TestItems[expectedIndex.Value] : null;
         var expectedSourceCount = initialSourceCount - 1;
-        var expectedHistoryCount = historyCount - 1;
+        var expectedCurrent = _queueService.Current;
         var expectedRemainingCount = _queueService.Remaining.Count;
+        var expectedHistoryCount = _queueService.History.Count - 1;
         // Act
         var result = _queueService.RemoveFromSource(itemToRemove);
         // Assert
@@ -311,6 +366,60 @@ public class PlayerQueueServiceTests
             x => x.Source.Count.ShouldBe(expectedSourceCount),
             x => x.History.Count.ShouldBe(expectedHistoryCount),
             x => x.Remaining.Count.ShouldBe(expectedRemainingCount));
+        _propertiesChanged.ShouldNotContain(nameof(_queueService.Current));
+    }
+
+    [Fact]
+    public void RemoveFromSource_ShouldRemoveItemAfterCurrent()
+    {
+        // Arrange
+        _queueService.AddToSource(TestItems); // Add 3 items and pop the first one to History
+        _queueService.GetNext(); // Move to second item
+        AttachPropertyChangedEventHandler();
+        var itemToRemove = TestItems[2]; // Will remove the last item in Source
+        var initialSourceCount = _queueService.Source.Count;
+        var expectedSourceCount = initialSourceCount - 1;
+        var expectedCurrent = _queueService.Current;
+        var expectedRemainingCount = _queueService.Remaining.Count - 1;
+        var expectedHistoryCount = _queueService.History.Count;
+        // Act
+        var result = _queueService.RemoveFromSource(itemToRemove);
+        // Assert
+        result.ShouldBeTrue();
+        _queueService.ShouldSatisfyAllConditions(
+            x => x.Current.ShouldBe(expectedCurrent),
+            x => x.Source.Count.ShouldBe(expectedSourceCount),
+            x => x.History.Count.ShouldBe(expectedHistoryCount),
+            x => x.Remaining.Count.ShouldBe(expectedRemainingCount));
+        _propertiesChanged.ShouldNotContain(nameof(_queueService.Current));
+    }
+
+    [Theory]
+    [InlineData(0, 1)]
+    [InlineData(1, 2)]
+    [InlineData(2, 1)]
+    public void RemoveFromSource_ShouldRemoveCurrentItem(int currentIndexToRemove, int expectedIndexFromTestData)
+    {
+        // Arrange
+        _queueService.AddToSource(TestItems); // Add 3 items and pop the first one to History
+        for (int i = 1; i <= TestItems.Length; i++)
+            _queueService.GetNext(); // Push all items to History
+        _queueService.SetCurrent(TestItems[currentIndexToRemove]); // Set the current item to the specified index
+        AttachPropertyChangedEventHandler();
+        var itemToRemove = _queueService.History[currentIndexToRemove];
+        var expectedCurrent = TestItems[expectedIndexFromTestData];
+        var initialSourceCount = _queueService.Source.Count;
+        var expectedSourceCount = initialSourceCount - 1;
+        var expectedHistoryCount = _queueService.History.Count - 1;
+        // Act
+        var result = _queueService.RemoveFromSource(itemToRemove);
+        // Assert
+        result.ShouldBeTrue();
+        _queueService.ShouldSatisfyAllConditions(
+            x => x.Current.ShouldBe(expectedCurrent),
+            x => x.Source.Count.ShouldBe(expectedSourceCount),
+            x => x.History.Count.ShouldBe(expectedHistoryCount));
+        _propertiesChanged.ShouldContain(nameof(_queueService.Current));
     }
     #endregion
 
@@ -372,4 +481,15 @@ public class PlayerQueueServiceTests
             x => x.Remaining.Count.ShouldBe(0));
     }
     #endregion
+
+    private void AttachPropertyChangedEventHandler()
+    {
+        _queueService.PropertyChanged += (s, e) =>
+        {
+            if (e.PropertyName == null)
+                return;
+            if (!_propertiesChanged.Contains(e.PropertyName))
+                _propertiesChanged.Add(e.PropertyName!);
+        };
+    }
 }
