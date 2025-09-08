@@ -1,5 +1,4 @@
-﻿using FluentAssertions;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using Moq;
 using Panther.Core;
 using Panther.Core.Enums;
@@ -7,6 +6,7 @@ using Panther.Core.Exceptions;
 using Panther.Core.Models;
 using Panther.Infrastructure.BassWrapper;
 using Panther.Infrastructure.BassWrapper.Models;
+using Shouldly;
 using Un4seen.Bass;
 
 namespace Panther.Infrastructure.Tests;
@@ -32,6 +32,7 @@ public sealed class FileMusicPlayerTests : IDisposable
             .Returns(_channelMock.Object);
     }
 
+    #region Volume Tests
     [Fact]
     public void GetVolume_ShouldGetFromBass()
     {
@@ -41,7 +42,7 @@ public sealed class FileMusicPlayerTests : IDisposable
         // Act
         actualVolume = _musicPlayer.Volume;
         // Assert
-        actualVolume.Should().Be(0.5f);
+        actualVolume.ShouldBe(0.5f);
     }
 
     [Fact]
@@ -53,16 +54,18 @@ public sealed class FileMusicPlayerTests : IDisposable
         // Act
         _musicPlayer.Volume = 0.5f;
         // Assert
-        actualVolume.Should().Be(0.5f);
+        actualVolume.ShouldBe(0.5f);
     }
+    #endregion
 
+    #region Position Tests
     [Fact]
     public void Position_ShouldReturnZeroWhenNoChannel()
     {
         // Act
         var position = _musicPlayer.GetPositionInSeconds();
         // Assert
-        position.Should().Be(0);
+        position.ShouldBe(0);
     }
 
     [Fact]
@@ -74,9 +77,11 @@ public sealed class FileMusicPlayerTests : IDisposable
         // Act
         var position = _musicPlayer.GetPositionInSeconds();
         // Assert
-        position.Should().Be(42.0);
+        position.ShouldBe(42.0);
     }
+    #endregion
 
+    #region PlaybackState Tests
     [Fact]
     public async Task PlaybackState_ShouldRaiseEventWhenChanged()
     {
@@ -88,10 +93,12 @@ public sealed class FileMusicPlayerTests : IDisposable
         _musicPlayer.Play();
         await Task.Delay(5); // Allow some time for the event to be raised
         // Assert
-        wasCalled.Should().BeTrue();
-        _musicPlayer.PlaybackState.Should().Be(PlaybackState.Playing);
+        wasCalled.ShouldBeTrue();
+        _musicPlayer.PlaybackState.ShouldBe(PlaybackState.Playing);
     }
+    #endregion
 
+    #region LoadTrackAsync Tests
     [Fact]
     public async Task LoadTrackAsync_ShouldLoadTrack()
     {
@@ -103,8 +110,9 @@ public sealed class FileMusicPlayerTests : IDisposable
         await _musicPlayer.LoadTrackAsync(FakeFilePath, CancellationToken.None);
         await Task.Delay(5); // Allow some time for the event to be raised
         // Assert
-        actual.Should().NotBeNull()
-            .And.BeEquivalentTo(expected);
+        actual.ShouldSatisfyAllConditions(
+            x => x.ShouldNotBeNull(),
+            x => x.ShouldBeEquivalentTo(expected));
     }
 
     [Fact]
@@ -143,7 +151,7 @@ public sealed class FileMusicPlayerTests : IDisposable
         // Act
         Func<Task> act = () => _musicPlayer.LoadTrackAsync(FakeFilePath, cts.Token);
         // Assert
-        await act.Should().NotThrowAsync();
+        await act.ShouldNotThrowAsync();
     }
 
     [Fact]
@@ -155,13 +163,15 @@ public sealed class FileMusicPlayerTests : IDisposable
         // Act
         Func<Task> act = () => _musicPlayer.LoadTrackAsync(FakeFilePath, CancellationToken.None);
         // Assert
-        await act.Should().ThrowAsync<MusicPlayerException>()
-            .Where(e =>
-                e.Operation == nameof(_musicPlayer.LoadTrackAsync) &&
-                e.InnerException != null &&
-                e.InnerException.Message == "Test exception");
+        var exception = await act.ShouldThrowAsync<MusicPlayerException>();
+        exception.ShouldSatisfyAllConditions(
+            e => e.Operation.ShouldBe(nameof(_musicPlayer.LoadTrackAsync)),
+            e => e.InnerException.ShouldNotBeNull(),
+            e => e.InnerException!.Message.ShouldBe("Test exception"));
     }
+    #endregion
 
+    #region Play Tests
     [Theory]
     [InlineData(PlaybackState.Stopped, PlaybackState.Playing)]
     [InlineData(PlaybackState.Paused, PlaybackState.Playing)]
@@ -176,8 +186,8 @@ public sealed class FileMusicPlayerTests : IDisposable
         _musicPlayer.Play();
         await Task.Delay(5); // Allow some time for the event to be raised
         // Assert
-        _musicPlayer.PlaybackState.Should().Be(expected);
-        wasCalled.Should().Be(previous != PlaybackState.Playing);
+        _musicPlayer.PlaybackState.ShouldBe(expected);
+        wasCalled.ShouldBe(previous != PlaybackState.Playing);
     }
 
     [Fact]
@@ -190,8 +200,8 @@ public sealed class FileMusicPlayerTests : IDisposable
         _musicPlayer.Play();
         await Task.Delay(5); // Allow some time for the event to be raised
         // Assert
-        _musicPlayer.PlaybackState.Should().Be(PlaybackState.Stopped);
-        wasCalled.Should().BeFalse();
+        _musicPlayer.PlaybackState.ShouldBe(PlaybackState.Stopped);
+        wasCalled.ShouldBeFalse();
     }
 
     [Fact]
@@ -203,14 +213,16 @@ public sealed class FileMusicPlayerTests : IDisposable
         // Act
         Action act = () => _musicPlayer.Play();
         // Assert
-        act.Should().Throw<MusicPlayerException>()
-            .Where(e =>
-                e.Operation == nameof(_musicPlayer.Play) &&
-                e.InnerException != null &&
-                e.InnerException.Message == "Test exception");
-        _musicPlayer.PlaybackState.Should().Be(PlaybackState.Stopped);
+        var exception = act.ShouldThrow<MusicPlayerException>();
+        exception.ShouldSatisfyAllConditions(
+            e => e.Operation.ShouldBe(nameof(_musicPlayer.Play)),
+            e => e.InnerException.ShouldNotBeNull(),
+            e => e.InnerException!.Message.ShouldBe("Test exception"));
+        _musicPlayer.PlaybackState.ShouldBe(PlaybackState.Stopped);
     }
+    #endregion
 
+    #region Pause Tests
     [Theory]
     [InlineData(PlaybackState.Playing, PlaybackState.Paused)]
     [InlineData(PlaybackState.Paused, PlaybackState.Paused)]
@@ -225,8 +237,8 @@ public sealed class FileMusicPlayerTests : IDisposable
         _musicPlayer.Pause();
         await Task.Delay(5); // Allow some time for the event to be raised
         // Assert
-        _musicPlayer.PlaybackState.Should().Be(expected);
-        wasCalled.Should().Be(previous == PlaybackState.Playing);
+        _musicPlayer.PlaybackState.ShouldBe(expected);
+        wasCalled.ShouldBe(previous == PlaybackState.Playing);
     }
 
     [Fact]
@@ -239,8 +251,8 @@ public sealed class FileMusicPlayerTests : IDisposable
         _musicPlayer.Pause();
         await Task.Delay(5); // Allow some time for the event to be raised
         // Assert
-        _musicPlayer.PlaybackState.Should().Be(PlaybackState.Stopped);
-        wasCalled.Should().BeFalse();
+        _musicPlayer.PlaybackState.ShouldBe(PlaybackState.Stopped);
+        wasCalled.ShouldBeFalse();
     }
 
     [Fact]
@@ -252,14 +264,16 @@ public sealed class FileMusicPlayerTests : IDisposable
         // Act
         Action act = () => _musicPlayer.Pause();
         // Assert
-        act.Should().Throw<MusicPlayerException>()
-            .Where(e =>
-                e.Operation == nameof(_musicPlayer.Pause) &&
-                e.InnerException != null &&
-                e.InnerException.Message == "Test exception");
-        _musicPlayer.PlaybackState.Should().Be(PlaybackState.Playing);
+        var exception = act.ShouldThrow<MusicPlayerException>();
+        exception.ShouldSatisfyAllConditions(
+            e => e.Operation.ShouldBe(nameof(_musicPlayer.Pause)),
+            e => e.InnerException.ShouldNotBeNull(),
+            e => e.InnerException!.Message.ShouldBe("Test exception"));
+        _musicPlayer.PlaybackState.ShouldBe(PlaybackState.Playing);
     }
+    #endregion
 
+    #region Stop Tests
     [Theory]
     [InlineData(PlaybackState.Stopped)]
     [InlineData(PlaybackState.Paused)]
@@ -274,8 +288,8 @@ public sealed class FileMusicPlayerTests : IDisposable
         _musicPlayer.Stop();
         await Task.Delay(5); // Allow some time for the event to be raised
         // Assert
-        _musicPlayer.PlaybackState.Should().Be(PlaybackState.Stopped);
-        wasCalled.Should().Be(initialState != PlaybackState.Stopped);
+        _musicPlayer.PlaybackState.ShouldBe(PlaybackState.Stopped);
+        wasCalled.ShouldBe(initialState != PlaybackState.Stopped);
     }
 
     [Fact]
@@ -288,8 +302,8 @@ public sealed class FileMusicPlayerTests : IDisposable
         _musicPlayer.Stop();
         await Task.Delay(5); // Allow some time for the event to be raised
         // Assert
-        _musicPlayer.PlaybackState.Should().Be(PlaybackState.Stopped);
-        wasCalled.Should().BeFalse();
+        _musicPlayer.PlaybackState.ShouldBe(PlaybackState.Stopped);
+        wasCalled.ShouldBeFalse();
     }
 
     [Fact]
@@ -301,14 +315,16 @@ public sealed class FileMusicPlayerTests : IDisposable
         // Act
         Action act = () => _musicPlayer.Stop();
         // Assert
-        act.Should().Throw<MusicPlayerException>()
-            .Where(e =>
-                e.Operation == nameof(_musicPlayer.Stop) &&
-                e.InnerException != null &&
-                e.InnerException.Message == "Test exception");
-        _musicPlayer.PlaybackState.Should().Be(PlaybackState.Playing);
+        var exception = act.ShouldThrow<MusicPlayerException>();
+        exception.ShouldSatisfyAllConditions(
+            x => x.Operation.ShouldBe(nameof(_musicPlayer.Stop)),
+            x => x.InnerException.ShouldNotBeNull(),
+            x => x.InnerException!.Message.ShouldBe("Test exception"));
+        _musicPlayer.PlaybackState.ShouldBe(PlaybackState.Playing);
     }
+    #endregion
 
+    #region Seek Tests
     [Fact]
     public async Task Seek_ShouldUpdatePosition()
     {
@@ -324,8 +340,8 @@ public sealed class FileMusicPlayerTests : IDisposable
         _musicPlayer.Seek(expected);
         await Task.Delay(5);
         // Assert
-        actual.Should().Be(expected);
-        wasCalled.Should().BeTrue();
+        actual.ShouldBe(expected);
+        wasCalled.ShouldBeTrue();
     }
 
     [Fact]
@@ -338,13 +354,15 @@ public sealed class FileMusicPlayerTests : IDisposable
         // Act
         Action act = () => _musicPlayer.Seek(10D);
         // Assert
-        act.Should().Throw<MusicPlayerException>()
-            .Where(e =>
-                e.Operation == nameof(_musicPlayer.Seek) &&
-                e.InnerException != null &&
-                e.InnerException.Message == "Test exception");
+        var exception = act.ShouldThrow<MusicPlayerException>();
+        exception.ShouldSatisfyAllConditions(
+            e => e.Operation.ShouldBe(nameof(_musicPlayer.Seek)),
+            e => e.InnerException.ShouldNotBeNull(),
+            e => e.InnerException!.Message.ShouldBe("Test exception"));
     }
+    #endregion
 
+    #region PositionChanged Event Tests
     [Theory]
     [InlineData(0, 100, PlaybackState.Stopped, false)]
     [InlineData(50, 100, PlaybackState.Playing, false)]
@@ -367,8 +385,8 @@ public sealed class FileMusicPlayerTests : IDisposable
         // Act
         _timerMock.Raise(x => x.Elapsed += null, EventArgs.Empty);
         // Assert
-        actual.Should().Be(expected);
-        playbackEndedRaised.Should().Be(shouldRaiseEnded);
+        actual.ShouldBe(expected);
+        playbackEndedRaised.ShouldBe(shouldRaiseEnded);
     }
 
     [Fact]
@@ -380,8 +398,9 @@ public sealed class FileMusicPlayerTests : IDisposable
         // Act
         _timerMock.Raise(x => x.Elapsed += null, EventArgs.Empty);
         // Assert
-        wasCalled.Should().BeFalse();
+        wasCalled.ShouldBeFalse();
     }
+    #endregion
 
     private async Task InitializePlayerOnState(PlaybackState playbackState)
     {

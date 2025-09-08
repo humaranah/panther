@@ -1,20 +1,23 @@
 ﻿using Panther.Core.Models;
+using System.Collections.ObjectModel;
 
 namespace Panther.Core;
 
 public interface IPlayerQueueService
 {
-    IReadOnlyCollection<PlayerQueueItem> Items { get; }
-    PlayerQueueItem? Current { get; }
+    ObservableCollection<TrackInfo> History { get; }
+    IReadOnlyCollection<TrackInfo> Source { get; }
+    IReadOnlyCollection<TrackInfo> Remaining { get; }
+    TrackInfo? Current { get; }
     bool IsEmpty { get; }
-    bool IsFirstPosition { get; }
-    bool IsLastPosition { get; }
-    PlayerQueueItem? Next(bool isLoop);
-    PlayerQueueItem? Previous(bool isLoop);
-    PlayerQueueItem? SetCurrentTo(PlayerQueueItem item);
-    bool Add(PlayerQueueItem item);
-    bool AddRange(IEnumerable<PlayerQueueItem> items);
-    bool Remove(PlayerQueueItem item);
+    bool IsRepeat { get; set; }
+    bool IsShuffle { get; set; }
+    TrackInfo? GetNext();
+    TrackInfo? GetPrevious();
+    TrackInfo? SetCurrent(TrackInfo item);
+    void AddToSource(TrackInfo item);
+    bool AddToSource(IEnumerable<TrackInfo> items);
+    bool RemoveFromSource(TrackInfo item);
+    bool ReplaceSource(IEnumerable<TrackInfo> items);
     void Clear();
-    void Shuffle();
 }

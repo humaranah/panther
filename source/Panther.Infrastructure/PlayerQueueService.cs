@@ -1,120 +1,135 @@
 ﻿using Panther.Core;
 using Panther.Core.Models;
+using Panther.Core.Util;
+using System.Collections.ObjectModel;
 
 namespace Panther.Infrastructure;
 
-public class PlayerQueueService : IPlayerQueueService
+public class PlayerQueueService(IRandomProvider random) : IPlayerQueueService
 {
-    private LinkedList<PlayerQueueItem> _items = [];
-    private LinkedListNode<PlayerQueueItem>? _current;
+    private readonly List<TrackInfo> _source = [];
+    private readonly List<TrackInfo> _remaining = [];
 
-    public IReadOnlyCollection<PlayerQueueItem> Items => _items;
+    private int _currentIndex = -1;
 
-    public PlayerQueueItem? Current => _current?.Value;
+    public ObservableCollection<TrackInfo> History { get; private set; } = [];
 
-    public bool IsEmpty => _items.Count == 0;
+    public IReadOnlyCollection<TrackInfo> Source => _source;
 
-    public bool IsFirstPosition => _current?.Value == _items.First?.Value;
+    public IReadOnlyCollection<TrackInfo> Remaining => _remaining;
 
-    public bool IsLastPosition => _current?.Value == _items.Last?.Value;
+    public TrackInfo? Current => _currentIndex >= 0 && _currentIndex < History.Count ? History[_currentIndex] : null;
 
-    public bool Add(PlayerQueueItem item)
+    public bool IsEmpty => _source.Count == 0;
+    public bool IsRepeat { get; set; }
+    public bool IsShuffle { get; set; }
+
+    public TrackInfo? GetNext()
     {
-        var lastCount = _items.Count;
-        var added = _items.AddLast(item);
-        if (lastCount == 0)
-            _current = added;
-        return true;
+        if (IsEmpty)
+            return null;
+        if (_remaining.Count == 0)
+        {
+            if (!IsRepeat)
+                return null;
+            _remaining.AddRange(_source);
+        }
+        var nextOffset = IsShuffle ? random.Next(_remaining.Count) : 0;
+        var next = _remaining[nextOffset];
+        _remaining.RemoveAt(nextOffset);
+        History.Add(next);
+        _currentIndex++;
+        return next;
     }
 
-    public bool AddRange(IEnumerable<PlayerQueueItem> items)
+    public TrackInfo? GetPrevious()
+    {
+        if (History.Count == 0)
+            return null;
+        _currentIndex--;
+        return _currentIndex >= 0 ? History[_currentIndex] : null;
+    }
+
+    public TrackInfo? SetCurrent(TrackInfo item)
+    {
+        if (IsEmpty || History.Count == 0)
+            return null;
+        var index = History.IndexOf(item);
+        if (index < 0 || index >= History.Count)
+            return Current;
+        if (index != _currentIndex)
+            _currentIndex = index;
+        return History[_currentIndex];
+    }
+
+    public void AddToSource(TrackInfo item)
+    {
+        _source.Add(item);
+        if (History.Count > 0)
+        {
+            _remaining.Add(item);
+            return;
+        }
+        History.Add(item);
+        _currentIndex = 0;
+    }
+
+    public bool AddToSource(IEnumerable<TrackInfo> items)
     {
         var itemsList = items.ToList();
         if (itemsList.Count == 0)
             return false;
-        var lastCount = _items.Count;
-        itemsList.ForEach(item => _items.AddLast(item));
-        if (lastCount == 0)
-            _current = _items.First;
+        _source.AddRange(itemsList);
+        _remaining.AddRange(itemsList);
+        if (History.Count == 0)
+        {
+            History.Add(itemsList[0]);
+            _remaining.RemoveAt(0);
+            _currentIndex = 0;
+        }
+        return true;
+    }
+
+    public bool RemoveFromSource(TrackInfo item)
+    {
+        if (IsEmpty)
+            return false;
+        var index = _source.IndexOf(item);
+        if (index < 0)
+            return false;
+        _source.Remove(item);
+        _remaining.Remove(item);
+        var historyIndex = History.IndexOf(item);
+        if (historyIndex >= 0)
+        {
+            History.RemoveAt(historyIndex);
+            if (History.Count == 0)
+                _currentIndex = -1;
+            else if (historyIndex <= _currentIndex)
+                _currentIndex = Math.Clamp(--_currentIndex, 0, History.Count - 1);
+        }
+        return true;
+    }
+
+    public bool ReplaceSource(IEnumerable<TrackInfo> items)
+    {
+        var itemsList = items.ToList();
+        if (itemsList.Count == 0)
+            return false;
+        _source.Clear();
+        _source.AddRange(itemsList);
+        _remaining.Clear();
+        History.Clear();
+        History.Add(itemsList[0]);
+        _currentIndex = 0;
         return true;
     }
 
     public void Clear()
     {
-        _items.Clear();
-        _current = null;
-    }
-
-    public PlayerQueueItem? SetCurrentTo(PlayerQueueItem item)
-    {
-        var node = _items.Find(item);
-        if (node == null)
-            return null;
-        _current = node;
-        return node.Value;
-    }
-
-    public PlayerQueueItem? Next(bool isLoop)
-    {
-        if (_current == null)
-            return null;
-        if (_current.Next != null)
-        {
-            _current = _current.Next;
-            return _current.Value;
-        }
-        if (isLoop && _items.First != null)
-        {
-            _current = _items.First;
-            return _current.Value;
-        }
-        return null;
-    }
-
-    public PlayerQueueItem? Previous(bool isLoop)
-    {
-        if (_current == null)
-            return null;
-        if (_current.Previous != null)
-        {
-            _current = _current.Previous;
-            return _current.Value;
-        }
-        if (isLoop && _items.Last != null)
-        {
-            _current = _items.Last;
-            return _current.Value;
-        }
-        return null;
-    }
-
-    public bool Remove(PlayerQueueItem item)
-    {
-        var node = _items.Find(item);
-        if (node == null)
-            return false;
-        if (node == _current)
-        {
-            if (_current.Next != null)
-                _current = _current.Next;
-            else if (_current.Previous != null)
-                _current = _current.Previous;
-            else
-                _current = null;
-        }
-        _items.Remove(node);
-        return true;
-    }
-
-    public void Shuffle()
-    {
-        if (_items.Count < 2)
-            return;
-        var currentItem = _current?.Value;
-        var array = _items.ToArray();
-        Random.Shared.Shuffle(array);
-        _items = new LinkedList<PlayerQueueItem>(array);
-        if (currentItem != null)
-            _current = _items.Find(currentItem);
+        _source.Clear();
+        _remaining.Clear();
+        History.Clear();
+        _currentIndex = -1;
     }
 }

@@ -17,11 +17,13 @@ public partial class PlayerViewModel : ObservableObject
     private const double DefaultPositionThreshold = 2;
 
     private readonly IMusicPlayer _musicPlayer;
+    private readonly IPlayerQueueService _queueService;
     private readonly ITrackInfoProvider _trackProvider;
     private readonly IFilePickerService _filePickerService;
 
     public PlayerViewModel(
         IMusicPlayer musicPlayer,
+        IPlayerQueueService queueService,
         ITrackInfoProvider trackProvider,
         IFilePickerService filePickerService)
     {
@@ -30,6 +32,7 @@ public partial class PlayerViewModel : ObservableObject
         _musicPlayer.PlaybackStateChanged += OnPlayerStateChanged;
         _musicPlayer.TrackChanged += OnPlayerTrackChanged;
         _musicPlayer.PlaybackEnded += OnPlayerPlaybackEnded;
+        _queueService = queueService;
         _trackProvider = trackProvider;
         _filePickerService = filePickerService;
     }
