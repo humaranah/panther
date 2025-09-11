@@ -2,9 +2,9 @@
 using Panther.Core;
 using Panther.Core.Enums;
 using Panther.Core.Exceptions;
-using Panther.Core.Models;
 using Panther.Infrastructure.BassWrapper;
 using Panther.Infrastructure.BassWrapper.Models;
+using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 
 namespace Panther.Infrastructure;
@@ -12,6 +12,7 @@ namespace Panther.Infrastructure;
 public class FileMusicPlayer : IMusicPlayer, IDisposable
 {
     // Constants
+    private const double VolumeThreshold = 0.01;
     private const double PositionThreshold = 0.001;
 
     // Dependencies
@@ -22,15 +23,15 @@ public class FileMusicPlayer : IMusicPlayer, IDisposable
     // State
     private IBassChannel? _channel;
     private PlaybackState _playbackState;
+    private float _volume;
     private string? _trackSource;
-    private double _trackDuration;
-    private double _lastKnownPosition;
+    private double _durationInSeconds;
+    private double _positionInSeconds;
     private bool _disposed;
 
     // Events
+    public event PropertyChangedEventHandler? PropertyChanged;
     public event EventHandler<double>? PositionChanged;
-    public event EventHandler<PlaybackState>? PlaybackStateChanged;
-    public event EventHandler<TrackChange>? TrackChanged;
     public event EventHandler? PlaybackEnded;
 
     public FileMusicPlayer(
@@ -41,7 +42,7 @@ public class FileMusicPlayer : IMusicPlayer, IDisposable
         _bass = bass;
         if (_bass is IBassNotifier notifier)
             notifier.OperationError += OnBassOperationError;
-        _bass.Init();
+        _bass.Init(); // Ensure BASS is initialized
         _playbackTimer = playbackTimer;
         _playbackTimer.Elapsed += OnPlaybackTimerElapsed;
         _logger = logger;
@@ -49,8 +50,57 @@ public class FileMusicPlayer : IMusicPlayer, IDisposable
 
     public float Volume
     {
-        get => _bass.GetVolume();
-        set => _bass.SetVolume(Math.Clamp(value, 0f, 1f));
+        get => _volume;
+        set
+        {
+            if (!HasTrackLoaded) return;
+            if (Math.Abs(_volume - value) > VolumeThreshold)
+            {
+                _volume = value;
+                _channel.SetVolume(value);
+                PropertyChanged?.Invoke(this, new(nameof(Volume)));
+            }
+        }
+    }
+
+    public string? TrackSource
+    {
+        get => _trackSource;
+        set
+        {
+            if (_trackSource != value)
+            {
+                _trackSource = value;
+                PropertyChanged?.Invoke(this, new(nameof(TrackSource)));
+                PropertyChanged?.Invoke(this, new(nameof(HasTrackLoaded)));
+            }
+        }
+    }
+
+    public double DurationInSeconds
+    {
+        get => _durationInSeconds;
+        private set
+        {
+            if (Math.Abs(_durationInSeconds - value) > PositionThreshold)
+            {
+                _durationInSeconds = value;
+                PropertyChanged?.Invoke(this, new(nameof(DurationInSeconds)));
+            }
+        }
+    }
+
+    public double PositionInSeconds
+    {
+        get => _positionInSeconds;
+        private set
+        {
+            if (Math.Abs(_positionInSeconds - value) > PositionThreshold)
+            {
+                _positionInSeconds = value;
+                PositionChanged?.Invoke(this, _positionInSeconds);
+            }
+        }
     }
 
     public PlaybackState PlaybackState
@@ -58,9 +108,11 @@ public class FileMusicPlayer : IMusicPlayer, IDisposable
         get => _playbackState;
         private set
         {
-            if (_playbackState == value) return;
-            _playbackState = value;
-            PlaybackStateChanged?.Invoke(this, value);
+            if (_playbackState != value)
+            {
+                _playbackState = value;
+                PropertyChanged?.Invoke(this, new(nameof(PlaybackState)));
+            }
         }
     }
 
@@ -107,6 +159,7 @@ public class FileMusicPlayer : IMusicPlayer, IDisposable
 
     private void SubscribeChannelEvents(IBassChannel channel)
     {
+        channel.PlaybackEnded += OnPlaybackEnded;
         if (channel is IBassNotifier notifier)
         {
             notifier.OperationError += OnBassOperationError;
@@ -115,6 +168,7 @@ public class FileMusicPlayer : IMusicPlayer, IDisposable
 
     private void UnsubscribeChannelEvents(IBassChannel channel)
     {
+        channel.PlaybackEnded -= OnPlaybackEnded;
         if (channel is IBassNotifier notifier)
         {
             notifier.OperationError -= OnBassOperationError;
@@ -123,35 +177,34 @@ public class FileMusicPlayer : IMusicPlayer, IDisposable
 
     private bool LoadTrackInternal(string sourceString, CancellationToken token)
     {
-        var previousSource = _trackSource;
         token.ThrowIfCancellationRequested();
         if (_channel != null)
         {
             UnsubscribeChannelEvents(_channel);
             _channel.Free();
-            _trackDuration = 0d;
-            _lastKnownPosition = 0d;
+            _durationInSeconds = 0d;
+            _positionInSeconds = 0d;
             _trackSource = null;
         }
 
-        _trackSource = sourceString;
-        _channel = _bass.StreamCreateFile(_trackSource);
+        _channel = _bass.StreamCreateFile(sourceString);
         if (_channel is null)
         {
             _trackSource = null;
             return false;
         }
 
-        _trackDuration = GetDurationInSeconds();
+        TrackSource = sourceString;
+        DurationInSeconds = GetDurationInSeconds();
         SubscribeChannelEvents(_channel);
-        TrackChanged?.Invoke(this, new TrackChange(previousSource, _trackSource));
         _logger.LogDebug("Track {SourceString} loaded successfully", _trackSource);
         return true;
     }
 
     public void Play()
     {
-        if (!HasTrackLoaded || PlaybackState == PlaybackState.Playing) return;
+        if (!HasTrackLoaded || PlaybackState == PlaybackState.Playing)
+            return;
         try
         {
             _channel.Play();
@@ -161,13 +214,14 @@ public class FileMusicPlayer : IMusicPlayer, IDisposable
         }
         catch (Exception ex)
         {
-            throw new MusicPlayerException("Error playing track", _trackSource, _lastKnownPosition, ex);
+            throw new MusicPlayerException("Error playing track", _trackSource, _positionInSeconds, ex);
         }
     }
 
     public void Pause()
     {
-        if (!HasTrackLoaded || PlaybackState != PlaybackState.Playing) return;
+        if (!HasTrackLoaded || PlaybackState != PlaybackState.Playing)
+            return;
         try
         {
             _channel.Pause();
@@ -177,25 +231,25 @@ public class FileMusicPlayer : IMusicPlayer, IDisposable
         }
         catch (Exception ex)
         {
-            throw new MusicPlayerException("Error pausing track", _trackSource, _lastKnownPosition, ex);
+            throw new MusicPlayerException("Error pausing track", _trackSource, _positionInSeconds, ex);
         }
     }
 
     public void Stop()
     {
-        if (!HasTrackLoaded || PlaybackState == PlaybackState.Stopped) return;
+        if (!HasTrackLoaded || PlaybackState == PlaybackState.Stopped)
+            return;
         try
         {
             _channel.Stop();
             _playbackTimer.Stop();
             PlaybackState = PlaybackState.Stopped;
-            _lastKnownPosition = 0;
-            PositionChanged?.Invoke(this, _lastKnownPosition);
+            PositionInSeconds = 0d;
             _logger.LogDebug("Playback stopped");
         }
         catch (Exception ex)
         {
-            throw new MusicPlayerException("Error stopping track", _trackSource, _lastKnownPosition, ex);
+            throw new MusicPlayerException("Error stopping track", _trackSource, _positionInSeconds, ex);
         }
     }
 
@@ -212,57 +266,46 @@ public class FileMusicPlayer : IMusicPlayer, IDisposable
             ? _channel.GetPositionInSeconds()
             : 0;
 
-        _lastKnownPosition = position;
-        return _lastKnownPosition;
+        _positionInSeconds = position;
+        return _positionInSeconds;
     }
 
-    public void Seek(double position)
+    public void Seek(double seconds)
     {
         if (!HasTrackLoaded) return;
         try
         {
             _playbackTimer.Stop();
-            _channel.SetPositionInSeconds(position);
-            _lastKnownPosition = position;
-            PositionChanged?.Invoke(this, position);
+            _channel.SetPositionInSeconds(seconds);
+            PositionInSeconds = seconds;
             _playbackTimer.Start();
         }
         catch (Exception ex)
         {
-            var pos = TimeSpan.FromSeconds(position);
+            var pos = TimeSpan.FromSeconds(seconds);
             throw new MusicPlayerException(
-                $"Error seeking playback to position: {pos}", _trackSource, _lastKnownPosition, ex);
+                $"Error seeking playback to position: {pos}", _trackSource, _positionInSeconds, ex);
         }
     }
 
     private void OnPlaybackTimerElapsed(object? sender, EventArgs e)
     {
-        if (!HasTrackLoaded)
+        if (!HasTrackLoaded || _playbackState != PlaybackState.Playing)
         {
-            if (Math.Abs(_lastKnownPosition) > PositionThreshold)
-            {
-                _lastKnownPosition = 0d;
-                PositionChanged?.Invoke(this, _lastKnownPosition);
-            }
             _playbackTimer.Stop();
             return;
         }
-        var previous = _lastKnownPosition;
-        var current = _channel!.GetPositionInSeconds();
-        _lastKnownPosition = current;
-        if (_channel is { Handle.IsEmpty: false } && _lastKnownPosition < _trackDuration)
+        PositionInSeconds = _channel.GetPositionInSeconds();
+    }
+
+    private void OnPlaybackEnded(object? sender, EventArgs e)
+    {
+        _playbackTimer.Stop();
+        _logger.LogDebug("Playback ended for track: {TrackSource}", _trackSource);
+        PlaybackEnded?.Invoke(this, EventArgs.Empty);
+        if (sender is IBassChannel channel)
         {
-            if (Math.Abs(current - previous) < PositionThreshold)
-            {
-                return;
-            }
-            PositionChanged?.Invoke(this, current);
-            return;
-        }
-        if (_lastKnownPosition >= _trackDuration && PlaybackState != PlaybackState.Stopped)
-        {
-            Stop();
-            PlaybackEnded?.Invoke(this, EventArgs.Empty);
+            UnsubscribeChannelEvents(channel);
         }
     }
 

@@ -17,5 +17,8 @@ public interface IBassChannel : IDisposable
     double GetPositionInSeconds();
     bool SetPositionInSeconds(double seconds);
 
+    float GetVolume();
+    bool SetVolume(float volume);
+
     bool Free();
 }

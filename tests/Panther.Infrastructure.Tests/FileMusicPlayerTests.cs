@@ -3,7 +3,6 @@ using Moq;
 using Panther.Core;
 using Panther.Core.Enums;
 using Panther.Core.Exceptions;
-using Panther.Core.Models;
 using Panther.Infrastructure.BassWrapper;
 using Panther.Infrastructure.BassWrapper.Models;
 using Shouldly;
@@ -19,6 +18,8 @@ public sealed class FileMusicPlayerTests : IDisposable
     private readonly Mock<IBassNotifier> _notifierMock;
     private readonly Mock<ILogger<FileMusicPlayer>> _loggerMock = new();
     private readonly FileMusicPlayer _musicPlayer;
+
+    private readonly HashSet<string> _propertiesChanged = [];
 
     private const string FakeFilePath = "fake.mp3";
 
@@ -86,15 +87,14 @@ public sealed class FileMusicPlayerTests : IDisposable
     public async Task PlaybackState_ShouldRaiseEventWhenChanged()
     {
         // Arrange
-        var wasCalled = false;
-        _musicPlayer.PlaybackStateChanged += (sender, state) => wasCalled = true;
-        // Act
         await _musicPlayer.LoadTrackAsync(FakeFilePath, CancellationToken.None);
+        AttachPropertyChangedListener();
+        // Act
         _musicPlayer.Play();
-        await Task.Delay(5); // Allow some time for the event to be raised
+        await Task.Delay(1); // Allow some time for the event to be raised
         // Assert
-        wasCalled.ShouldBeTrue();
         _musicPlayer.PlaybackState.ShouldBe(PlaybackState.Playing);
+        _propertiesChanged.ShouldContain(nameof(_musicPlayer.PlaybackState));
     }
     #endregion
 
@@ -103,16 +103,16 @@ public sealed class FileMusicPlayerTests : IDisposable
     public async Task LoadTrackAsync_ShouldLoadTrack()
     {
         // Arrange
-        var expected = new TrackChange(null, FakeFilePath);
-        TrackChange? actual = null;
-        _musicPlayer.TrackChanged += (sender, trackChange) => actual = trackChange;
+        AttachPropertyChangedListener();
         // Act
-        await _musicPlayer.LoadTrackAsync(FakeFilePath, CancellationToken.None);
-        await Task.Delay(5); // Allow some time for the event to be raised
+        var result = await _musicPlayer.LoadTrackAsync(FakeFilePath, CancellationToken.None);
+        await Task.Delay(1); // Allow some time for the event to be raised
         // Assert
-        actual.ShouldSatisfyAllConditions(
-            x => x.ShouldNotBeNull(),
-            x => x.ShouldBeEquivalentTo(expected));
+        result.ShouldBeTrue();
+        _musicPlayer.HasTrackLoaded.ShouldBeTrue();
+        _musicPlayer.TrackSource.ShouldBe(FakeFilePath);
+        _propertiesChanged.ShouldContain(nameof(_musicPlayer.TrackSource));
+        _propertiesChanged.ShouldContain(nameof(_musicPlayer.HasTrackLoaded));
     }
 
     [Fact]
@@ -179,29 +179,30 @@ public sealed class FileMusicPlayerTests : IDisposable
     public async Task Play_ShouldSetPlaybackStateToPlaying(PlaybackState previous, PlaybackState expected)
     {
         // Arrange
-        var wasCalled = false;
         await InitializePlayerOnState(previous);
-        _musicPlayer.PlaybackStateChanged += (sender, state) => wasCalled = true;
+        AttachPropertyChangedListener();
         // Act
         _musicPlayer.Play();
-        await Task.Delay(5); // Allow some time for the event to be raised
+        await Task.Delay(1); // Allow some time for the event to be raised
         // Assert
         _musicPlayer.PlaybackState.ShouldBe(expected);
-        wasCalled.ShouldBe(previous != PlaybackState.Playing);
+        if (previous != PlaybackState.Playing)
+            _propertiesChanged.ShouldContain(nameof(_musicPlayer.PlaybackState));
+        else
+            _propertiesChanged.ShouldNotContain(nameof(_musicPlayer.PlaybackState));
     }
 
     [Fact]
     public async Task Play_ShouldNotTryToPlayWhenNoTrackLoaded()
     {
         // Arrange
-        var wasCalled = false;
-        _musicPlayer.PlaybackStateChanged += (sender, state) => wasCalled = true;
+        AttachPropertyChangedListener();
         // Act
         _musicPlayer.Play();
         await Task.Delay(5); // Allow some time for the event to be raised
         // Assert
         _musicPlayer.PlaybackState.ShouldBe(PlaybackState.Stopped);
-        wasCalled.ShouldBeFalse();
+        _propertiesChanged.ShouldNotContain(nameof(_musicPlayer.PlaybackState));
     }
 
     [Fact]
@@ -227,32 +228,33 @@ public sealed class FileMusicPlayerTests : IDisposable
     [InlineData(PlaybackState.Playing, PlaybackState.Paused)]
     [InlineData(PlaybackState.Paused, PlaybackState.Paused)]
     [InlineData(PlaybackState.Stopped, PlaybackState.Stopped)]
-    public async Task Pause_ShouldUpdatePlaybackStateIfNotStopped(PlaybackState previous, PlaybackState expected)
+    public async Task Pause_ShouldUpdatePlaybackStateIfNotStopped(PlaybackState current, PlaybackState expected)
     {
         // Arrange
-        var wasCalled = false;
-        await InitializePlayerOnState(previous);
-        _musicPlayer.PlaybackStateChanged += (sender, state) => wasCalled = true;
+        await InitializePlayerOnState(current);
+        AttachPropertyChangedListener();
         // Act
         _musicPlayer.Pause();
         await Task.Delay(5); // Allow some time for the event to be raised
         // Assert
         _musicPlayer.PlaybackState.ShouldBe(expected);
-        wasCalled.ShouldBe(previous == PlaybackState.Playing);
+        if (current != expected)
+            _propertiesChanged.ShouldContain(nameof(_musicPlayer.PlaybackState));
+        else
+            _propertiesChanged.ShouldNotContain(nameof(_musicPlayer.PlaybackState));
     }
 
     [Fact]
     public async Task Pause_ShouldNotTryToPauseWhenNoTrackLoaded()
     {
         // Arrange
-        var wasCalled = false;
-        _musicPlayer.PlaybackStateChanged += (sender, state) => wasCalled = true;
+        AttachPropertyChangedListener();
         // Act
         _musicPlayer.Pause();
         await Task.Delay(5); // Allow some time for the event to be raised
         // Assert
         _musicPlayer.PlaybackState.ShouldBe(PlaybackState.Stopped);
-        wasCalled.ShouldBeFalse();
+        _propertiesChanged.ShouldNotContain(nameof(_musicPlayer.PlaybackState));
     }
 
     [Fact]
@@ -281,29 +283,30 @@ public sealed class FileMusicPlayerTests : IDisposable
     public async Task Stop_ShouldSetPlaybackStateToStopped(PlaybackState initialState)
     {
         // Arrange
-        var wasCalled = false;
         await InitializePlayerOnState(initialState);
-        _musicPlayer.PlaybackStateChanged += (sender, state) => wasCalled = true;
+        AttachPropertyChangedListener();
         // Act
         _musicPlayer.Stop();
         await Task.Delay(5); // Allow some time for the event to be raised
         // Assert
         _musicPlayer.PlaybackState.ShouldBe(PlaybackState.Stopped);
-        wasCalled.ShouldBe(initialState != PlaybackState.Stopped);
+        if (initialState != PlaybackState.Stopped)
+            _propertiesChanged.ShouldContain(nameof(_musicPlayer.PlaybackState));
+        else
+            _propertiesChanged.ShouldNotContain(nameof(_musicPlayer.PlaybackState));
     }
 
     [Fact]
     public async Task Stop_ShouldNotTryToStopWhenNoTrackLoaded()
     {
         // Arrange
-        var wasCalled = false;
-        _musicPlayer.PlaybackStateChanged += (sender, state) => wasCalled = true;
+        AttachPropertyChangedListener();
         // Act
         _musicPlayer.Stop();
         await Task.Delay(5); // Allow some time for the event to be raised
         // Assert
         _musicPlayer.PlaybackState.ShouldBe(PlaybackState.Stopped);
-        wasCalled.ShouldBeFalse();
+        _propertiesChanged.ShouldNotContain(nameof(_musicPlayer.PlaybackState));
     }
 
     [Fact]
@@ -329,19 +332,20 @@ public sealed class FileMusicPlayerTests : IDisposable
     public async Task Seek_ShouldUpdatePosition()
     {
         // Arrange
-        var actual = 0D;
-        var expected = 10D;
-        var wasCalled = false;
+        var actual = 0d;
+        var expected = 10d;
+        var positionChangedCalled = false;
         _channelMock.Setup(x => x.SetPositionInSeconds(It.IsAny<double>()))
             .Callback<double>(x => actual = x);
-        _musicPlayer.PositionChanged += (sender, pos) => wasCalled = true;
+        _musicPlayer.PositionChanged += (sender, args) => positionChangedCalled = true;
+        AttachPropertyChangedListener();
         // Action
         await _musicPlayer.LoadTrackAsync(FakeFilePath, CancellationToken.None);
         _musicPlayer.Seek(expected);
         await Task.Delay(5);
         // Assert
+        positionChangedCalled.ShouldBeTrue();
         actual.ShouldBe(expected);
-        wasCalled.ShouldBeTrue();
     }
 
     [Fact]
@@ -364,41 +368,36 @@ public sealed class FileMusicPlayerTests : IDisposable
 
     #region PositionChanged Event Tests
     [Theory]
-    [InlineData(0, 100, PlaybackState.Stopped, false)]
-    [InlineData(50, 100, PlaybackState.Playing, false)]
-    [InlineData(50, 100, PlaybackState.Paused, false)]
-    [InlineData(100, 100, PlaybackState.Stopped, false)]
-    [InlineData(100, 100, PlaybackState.Playing, true)]
-    [InlineData(150, 100, PlaybackState.Paused, true)]
-    public async Task PositionChanged_ShouldBeRaisedByPlaybackTimer(
-        double position, double duration, PlaybackState playbackState, bool shouldRaiseEnded)
+    [InlineData(50, PlaybackState.Stopped)]
+    [InlineData(50, PlaybackState.Playing)]
+    [InlineData(50, PlaybackState.Paused)]
+    [InlineData(100, PlaybackState.Playing)]
+    public async Task PositionChanged_ShouldBeRaisedByPlaybackTimer(double position, PlaybackState playbackState)
     {
         // Arrange
-        var expected = position >= duration ? 0d : position;
-        var actual = 0d;
-        var playbackEndedRaised = false;
+        const double duration = 100d;
+        var actualPosition = 0d;
+        var expectedPosition = PlaybackState.Playing == playbackState ? position : 0d;
         _channelMock.Setup(x => x.GetChannelLengthInSeconds()).Returns(duration);
         _channelMock.Setup(x => x.GetPositionInSeconds()).Returns(position);
-        _musicPlayer.PositionChanged += (sender, pos) => actual = pos;
-        _musicPlayer.PlaybackEnded += (sender, args) => playbackEndedRaised = true;
+        _musicPlayer.PositionChanged += (sender, args) => actualPosition = args;
         await InitializePlayerOnState(playbackState);
         // Act
         _timerMock.Raise(x => x.Elapsed += null, EventArgs.Empty);
         // Assert
-        actual.ShouldBe(expected);
-        playbackEndedRaised.ShouldBe(shouldRaiseEnded);
+        actualPosition.ShouldBe(expectedPosition);
     }
 
     [Fact]
     public void PositionChanged_ShouldNotBeRaisedWhenTrackNotLoaded()
     {
         // Arrange
-        var wasCalled = false;
-        _musicPlayer.PositionChanged += (sender, pos) => wasCalled = true;
+        var position = 0d;
+        _musicPlayer.PositionChanged += (sender, args) => position = 50d;
         // Act
         _timerMock.Raise(x => x.Elapsed += null, EventArgs.Empty);
         // Assert
-        wasCalled.ShouldBeFalse();
+        position.ShouldBe(0d);
     }
     #endregion
 
@@ -422,5 +421,14 @@ public sealed class FileMusicPlayerTests : IDisposable
     {
         _musicPlayer.Dispose();
         GC.SuppressFinalize(this);
+    }
+
+    private void AttachPropertyChangedListener()
+    {
+        _musicPlayer.PropertyChanged += (sender, args) =>
+        {
+            if (args.PropertyName is not null)
+                _propertiesChanged.Add(args.PropertyName);
+        };
     }
 }

@@ -1,17 +1,24 @@
 ﻿using Panther.Core.Enums;
-using Panther.Core.Models;
+using System.ComponentModel;
 
 namespace Panther.Core;
 
-public interface IMusicPlayer
+/// <summary>
+/// Defines the contract for a music player capable of loading, playing, pausing, stopping, and seeking tracks.
+/// </summary>
+/// <remarks>This interface provides methods and properties to control playback, manage track loading, and monitor
+/// playback state. It also includes events for notifying when playback ends and implements <see
+/// cref="INotifyPropertyChanged"/> to allow consumers to observe changes to its properties.</remarks>
+public interface IMusicPlayer : INotifyPropertyChanged
 {
     event EventHandler<double>? PositionChanged;
-    event EventHandler<PlaybackState>? PlaybackStateChanged;
-    event EventHandler<TrackChange>? TrackChanged;
     event EventHandler? PlaybackEnded;
 
     float Volume { get; set; }
     PlaybackState PlaybackState { get; }
+    string? TrackSource { get; }
+    double DurationInSeconds { get; }
+    double PositionInSeconds { get; }
     bool HasTrackLoaded { get; }
 
 
@@ -19,7 +26,5 @@ public interface IMusicPlayer
     void Play();
     void Pause();
     void Stop();
-    double GetDurationInSeconds();
-    double GetPositionInSeconds();
-    void Seek(double position);
+    void Seek(double seconds);
 }

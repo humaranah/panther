@@ -26,12 +26,22 @@
                         <Setter Target="TrackInfo.Visibility" Value="Collapsed" />
                     </VisualState.Setters>
                 </VisualState>
-                <VisualState x:Name="WideState">
+                <VisualState x:Name="MediumState">
                     <VisualState.StateTriggers>
                         <AdaptiveTrigger MinWindowWidth="600" />
                     </VisualState.StateTriggers>
                     <VisualState.Setters>
                         <Setter Target="TrackInfo.Visibility" Value="Visible" />
+                        <Setter Target="AlbumArt.Visibility" Value="Collapsed" />
+                    </VisualState.Setters>
+                </VisualState>
+                <VisualState x:Name="WideState">
+                    <VisualState.StateTriggers>
+                        <AdaptiveTrigger MinWindowWidth="900" />
+                    </VisualState.StateTriggers>
+                    <VisualState.Setters>
+                        <Setter Target="TrackInfo.Visibility" Value="Visible" />
+                        <Setter Target="AlbumArt.Visibility" Value="Visible" />
                     </VisualState.Setters>
                 </VisualState>
             </VisualStateGroup>
@@ -50,55 +60,59 @@
             <ColumnDefinition />
         </Grid.ColumnDefinitions>
 
-        <Grid x:Name="TrackInfo" Grid.Row="2" Grid.RowSpan="2">
+        <!-- Track Info section -->
+        <Grid x:Name="TrackInfo" Grid.Row="2" Grid.RowSpan="2" ColumnSpacing="10">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="100" />
+                <ColumnDefinition Width="Auto" />
                 <ColumnDefinition />
             </Grid.ColumnDefinitions>
 
-            <Grid.RowDefinitions>
-                <RowDefinition />
-                <RowDefinition />
-            </Grid.RowDefinitions>
-            
             <!-- Album Art Image -->
-            <Border Grid.RowSpan="2"
+            <Border x:Name="AlbumArt"
+                    Grid.RowSpan="2"
                     BorderThickness="0"
-                    Background="{ThemeResource LayerOnMicaBaseAltFillColorSecondary}">
-                <Image Source="{x:Bind ViewModel.AlbumArt}"
+                    Background="{ThemeResource LayerOnMicaBaseAltFillColorSecondary}"
+                    Width="100">
+                <Image Source="{x:Bind ViewModel.AlbumArt, Mode=OneWay}"
                        Stretch="Uniform" />
             </Border>
 
-            <!-- Track Title -->
-            <TextBlock Grid.Column="1"
-                       Margin="4,1"
-                       VerticalAlignment="Bottom"
-                       HorizontalTextAlignment="Left"
-                       FontSize="16"
-                       FontWeight="SemiBold"
-                       Text="{x:Bind ViewModel.TrackTitle}" />
-            
-            <!-- Track Artist -->
-            <TextBlock Grid.Column="1"
-                       Grid.Row="1"
-                       Margin="4,1"
-                       VerticalAlignment="Top"
-                       Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
-                       HorizontalTextAlignment="Left"
-                       Text="{x:Bind ViewModel.TrackArtist}" />
+            <StackPanel Grid.Column="1"
+                        VerticalAlignment="Center">
+                <!-- Track Title -->
+                <TextBlock Grid.Column="1"
+                           Margin="4,1"
+                           VerticalAlignment="Bottom"
+                           HorizontalTextAlignment="Left"
+                           FontSize="16"
+                           FontWeight="SemiBold"
+                           Text="{x:Bind ViewModel.TrackTitle, Mode=OneWay}"
+                           TextWrapping="WrapWholeWords" />
+
+                <!-- Track Artist -->
+                <TextBlock Grid.Column="1"
+                           Grid.Row="1"
+                           Margin="4,1"
+                           VerticalAlignment="Top"
+                           Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                           HorizontalTextAlignment="Left"
+                           Text="{x:Bind ViewModel.TrackArtist, Mode=OneWay}"
+                           TextWrapping="WrapWholeWords" />
+            </StackPanel>
         </Grid>
 
         <!-- Playback Progress Slider -->
-        <Slider Grid.ColumnSpan="5"
+        <Slider x:Name="SeekBar"
+                Grid.ColumnSpan="5"
                 Grid.RowSpan="3"
                 IsEnabled="{x:Bind ViewModel.IsTrackLoaded, Mode=OneWay}"
                 Minimum="0"
-                Maximum="{x:Bind ViewModel.TotalDuration, Mode=OneWay}"
-                Value="{x:Bind ViewModel.CurrentPosition, Mode=TwoWay}"
+                Maximum="{x:Bind ViewModel.DurationInSeconds, Mode=OneWay}"
+                Value="0"
                 IsThumbToolTipEnabled="{x:Bind ViewModel.IsTrackLoaded, Mode=OneWay}"
                 ThumbToolTipValueConverter="{StaticResource SecondsToTime}"/>
 
-        <!-- Player Controls -->
+        <!-- Player Controls section -->
         <StackPanel Grid.Row="3" Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Top">
             
             <!-- Shuffle Button -->
@@ -146,21 +160,39 @@
             </ToggleButton>
         </StackPanel>
 
+        <!-- Audio section -->
         <StackPanel Grid.Column="2"
                     Grid.Row="2"
                     Grid.RowSpan="2"
-                    Margin="0,0,80,0"
+                    Margin="0,0,60,0"
                     Orientation="Horizontal"
                     HorizontalAlignment="Right"
                     VerticalAlignment="Center">
+            
+            <!-- Track Duration -->
+            <StackPanel Margin="0,0,10,0"
+                        VerticalAlignment="Center"
+                        HorizontalAlignment="Center">
+                <TextBlock x:Name="PositionTime"
+                           FontSize="12"
+                           HorizontalAlignment="Center"
+                           Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                           Text="{x:Bind ViewModel.PositionInSeconds, Mode=OneWay, Converter={StaticResource SecondsToTime}}" />
+                <TextBlock FontSize="12"
+                           HorizontalAlignment="Center"
+                           Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                           Text="{x:Bind ViewModel.DurationInSeconds, Mode=OneWay, Converter={StaticResource SecondsToTime}}" />
+            </StackPanel>
 
+            <!-- Mute button -->
             <ToggleButton Style="{StaticResource PlayerFlat40ToggleButtonStyle}"
-                          Margin="0"
+                          Margin="0,0,4,0"
                           IsChecked="{x:Bind ViewModel.IsMuted, Mode=TwoWay}">
                 <FontIcon Style="{StaticResource PlayerButtonPathIcon}"
                           Glyph="{x:Bind cv:GlyphConverters.GetVolumeGlyph(ViewModel.IsMuted, ViewModel.VolumePercent), Mode=OneWay}" />
             </ToggleButton>
 
+            <!-- Volume slider -->
             <Slider Width="120"
                     VerticalAlignment="Center"
                     Minimum="0"
@@ -169,7 +201,7 @@
                     LargeChange="10"
                     TickFrequency="50"
                     TickPlacement="Outside"
-                    Value="{x:Bind ViewModel.VolumePercent}"
+                    Value="{x:Bind ViewModel.VolumePercent, Mode=TwoWay}"
                     IsThumbToolTipEnabled="True"/>
         </StackPanel>
     </Grid>

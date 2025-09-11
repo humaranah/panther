@@ -5,6 +5,8 @@ namespace Panther.Infrastructure;
 
 public class PlaybackTimer : IPlaybackTimer, IDisposable
 {
+    private const double DefaultInterval = 200;
+
     private readonly Timer _timer;
     private bool _disposed;
 
@@ -12,7 +14,7 @@ public class PlaybackTimer : IPlaybackTimer, IDisposable
 
     public PlaybackTimer()
     {
-        _timer = new(200);
+        _timer = new(DefaultInterval);
         _timer.Elapsed += (sender, args) => Elapsed?.Invoke(this, EventArgs.Empty);
     }
 

@@ -111,6 +111,29 @@ public class BassChannel : IBassChannel, IBassNotifier
         return true;
     }
 
+    public float GetVolume()
+    {
+        var volume = 0f;
+        if (_handle.IsEmpty) return volume;
+        if (!Bass.BASS_ChannelGetAttribute(_handle, BASSAttribute.BASS_ATTRIB_VOL, ref volume))
+        {
+            this.GetErrorAndRaise("Failed to get channel volume", OperationError);
+            return 0f;
+        }
+        return volume;
+    }
+
+    public bool SetVolume(float volume)
+    {
+        if (_handle.IsEmpty) return false;
+        if (!Bass.BASS_ChannelSetAttribute(_handle, BASSAttribute.BASS_ATTRIB_VOL, volume))
+        {
+            this.GetErrorAndRaise("Failed to set channel volume", OperationError);
+            return false;
+        }
+        return true;
+    }
+
     public bool Free()
     {
         if (_handle.IsEmpty || !DetachEvents()) return false;
