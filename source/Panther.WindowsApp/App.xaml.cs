@@ -1,13 +1,5 @@
-﻿using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using Microsoft.UI.Xaml;
-using Microsoft.Windows.ApplicationModel.Resources;
-using Panther.Infrastructure;
-using Panther.Infrastructure.BassWrapper;
-using Panther.WindowsApp.Services;
-using Panther.WindowsApp.ViewModels;
+﻿using Microsoft.UI.Xaml;
 using Serilog;
-using Serilog.Events;
 using System;
 
 // To learn more about WinUI, the WinUI project structure,
@@ -28,20 +20,11 @@ public partial class App : Application
     /// </summary>
     public App()
     {
-        Log.Logger = new LoggerConfiguration()
-            .MinimumLevel.Debug()
-            .WriteTo.File("logs/log.txt",
-                rollingInterval: RollingInterval.Month,
-                restrictedToMinimumLevel: LogEventLevel.Warning)
-            .WriteTo.Debug(restrictedToMinimumLevel: LogEventLevel.Debug)
-            .CreateLogger();
-
+        StartUp.InitializeLogger();
+        Log.Information("Application starting up");
         try
         {
-            var services = new ServiceCollection();
-            ConfigureServices(services);
-            Services = services.BuildServiceProvider();
-            InitializeServices();
+            Services = StartUp.InitializeServices();
             InitializeComponent();
         }
         catch (Exception ex)
@@ -63,22 +46,5 @@ public partial class App : Application
     {
         _window = new MainWindow();
         _window.Activate();
-    }
-
-    private static void ConfigureServices(IServiceCollection services)
-    {
-        services
-            .AddPantherComponents()
-            .AddSingleton(new ResourceLoader())
-            .AddSingleton<INavigationService, NavigationService>()
-            .AddTransient<IFilePickerService, FilePickerService>()
-            .AddTransient<NavigationViewModel>()
-            .AddTransient<PlayerViewModel>()
-            .AddLogging(builder => builder.ClearProviders().AddSerilog(Log.Logger));
-    }
-
-    private static void InitializeServices()
-    {
-        Services.GetRequiredService<IBassNetService>().Register();
     }
 }
