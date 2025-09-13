@@ -117,25 +117,25 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="NavItemAlbums.Content" xml:space="preserve">
+  <data name="NavItem_Albums.Content" xml:space="preserve">
     <value>Albums</value>
   </data>
-  <data name="NavItemArtists.Content" xml:space="preserve">
+  <data name="NavItem_Artists.Content" xml:space="preserve">
     <value>Artists</value>
   </data>
-  <data name="NavItemLibrary.Content" xml:space="preserve">
+  <data name="NavItem_Library.Content" xml:space="preserve">
     <value>Library</value>
   </data>
-  <data name="NavItemNowPlaying.Content" xml:space="preserve">
+  <data name="NavItem_NowPlaying.Content" xml:space="preserve">
     <value>Now Playing</value>
   </data>
-  <data name="NavItemPlaylists.Content" xml:space="preserve">
+  <data name="NavItem_Playlists.Content" xml:space="preserve">
     <value>Playlists</value>
   </data>
-  <data name="NavItemQueue.Content" xml:space="preserve">
+  <data name="NavItem_Queue.Content" xml:space="preserve">
     <value>Playing Queue</value>
   </data>
-  <data name="NavItemSongs.Content" xml:space="preserve">
+  <data name="NavItem_Songs.Content" xml:space="preserve">
     <value>Songs</value>
   </data>
   <data name="NavSettingsLabel" xml:space="preserve">

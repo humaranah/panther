@@ -46,25 +46,25 @@
                         ItemInvoked="NavView_ItemInvoked">
 
             <NavigationView.MenuItems>
-                <NavigationViewItem x:Uid="NavItemNowPlaying" Icon="Play" Tag="NowPlaying" />
+                <NavigationViewItem x:Uid="NavItem_NowPlaying" Icon="Play" Tag="NowPlaying" />
                 <NavigationViewItemSeparator />
-                <NavigationViewItem x:Uid="NavItemArtists" Tag="Artists">
+                <NavigationViewItem x:Uid="NavItem_Artists" Tag="Artists">
                     <NavigationViewItem.Icon>
                         <PathIcon Data="{StaticResource ArtistsIconPath}" />
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
-                <NavigationViewItem x:Uid="NavItemAlbums" Tag="Albums">
+                <NavigationViewItem x:Uid="NavItem_Albums" Tag="Albums">
                     <NavigationViewItem.Icon>
                         <PathIcon Data="{StaticResource DisksIconPath}" />
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
-                <NavigationViewItem x:Uid="NavItemSongs" Tag="Songs">
+                <NavigationViewItem x:Uid="NavItem_Songs" Tag="Songs">
                     <NavigationViewItem.Icon>
                         <PathIcon Data="{StaticResource TracksIconPath}" />
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
                 <NavigationViewItemSeparator />
-                <NavigationViewItem x:Uid="NavItemPlaylists" Icon="List" Tag="Playlists" />
+                <NavigationViewItem x:Uid="NavItem_Playlists" Icon="List" Tag="Playlists" />
             </NavigationView.MenuItems>
 
             <Frame x:Name="ContentFrame"/>

@@ -7,5 +7,5 @@ public interface INavigationService
 {
     Frame RootFrame { get; }
 
-    void NavigateTo(Type pageType, object? parameters = null);
+    void NavigateTo(Type pageType, object? parameter = null);
 }
