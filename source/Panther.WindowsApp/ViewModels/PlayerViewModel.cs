@@ -1,6 +1,5 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using CommunityToolkit.WinUI;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml.Media;
 using Panther.Core;
@@ -17,40 +16,38 @@ namespace Panther.WindowsApp.ViewModels;
 
 public sealed partial class PlayerViewModel : ObservableObject, IDisposable
 {
-    private const double DefaultPositionThreshold = 2;
-
     private readonly IMusicPlayer _musicPlayer;
+    private readonly IPlaybackPositionTracker _playbackTracker;
     private readonly IPlayerQueueService _queueService;
     private readonly ITrackInfoProvider _trackProvider;
     private readonly IFilePickerService _filePickerService;
     private readonly DispatcherQueue _dispatcherQueue;
 
-    public event EventHandler<double>? PositionChanged;
+    private const double DefaultPreviousTrackThreshold = 2;
 
     public PlayerViewModel(
         IMusicPlayer musicPlayer,
+        IPlaybackPositionTracker playbackTimer,
         IPlayerQueueService queueService,
         ITrackInfoProvider trackProvider,
         IFilePickerService filePickerService)
     {
         _musicPlayer = musicPlayer;
         _musicPlayer.PropertyChanged += OnPlayerPropertyChanged;
-        _musicPlayer.PositionChanged += (s, e) => PositionChanged?.Invoke(this, e);
         _musicPlayer.PlaybackEnded += OnPlayerPlaybackEnded;
+        _playbackTracker = playbackTimer;
+        _playbackTracker.PositionUpdated += OnPlaybackPositionUpdated;
         _queueService = queueService;
         _trackProvider = trackProvider;
         _filePickerService = filePickerService;
         _dispatcherQueue = DispatcherQueue.GetForCurrentThread();
         VolumePercent = 100;
-        IsMuted = false;
     }
 
     #region Observable properties
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsTrackLoaded),
-        nameof(TrackTitle),
-        nameof(TrackArtist),
-        nameof(IsPlaying))]
+        nameof(TrackTitle), nameof(TrackArtist), nameof(IsPlaying))]
     private TrackInfo? _currentTrack;
 
     [ObservableProperty]
@@ -80,6 +77,9 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
     private double _positionInSeconds;
 
     [ObservableProperty]
+    private bool _isSeeking;
+
+    [ObservableProperty]
     private bool _isShuffleActive;
 
     [ObservableProperty]
@@ -91,6 +91,8 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
     #endregion
 
     #region Calculated properties
+    public IPlaybackPositionTracker PlaybackTracker => _playbackTracker;
+
     public bool IsTrackLoaded => _musicPlayer.HasTrackLoaded && CurrentTrack != null;
 
     public string TrackTitle => CurrentTrack?.Title ?? string.Empty;
@@ -119,19 +121,20 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
         {
             var file = await _filePickerService.PickSingleFileAsync();
             if (file == null) return;
-            var trackLoaded = await LoadTrackInternalAsync(file.Path, token);
-            if (!trackLoaded) return;
+            await LoadTrackInternalAsync(file.Path, token);
         }
         if (IsPlaying)
-            _musicPlayer.Pause();
+            PauseInternal();
         else
-            _musicPlayer.Play();
+            PlayInternal();
     }
 
     [RelayCommand]
     private void StopTrack()
     {
         _musicPlayer.Stop();
+        _playbackTracker.Stop();
+        SetPosition(0);
     }
 
     [RelayCommand]
@@ -146,9 +149,9 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
     [RelayCommand]
     private async Task PreviousTrack(CancellationToken cancellationToken)
     {
-        if (IsTrackLoaded && PositionInSeconds > DefaultPositionThreshold)
+        if (IsTrackLoaded && PositionInSeconds > DefaultPreviousTrackThreshold)
         {
-            _musicPlayer.Seek(0);
+            _musicPlayer.SeekTo(0);
             return;
         }
         if (_queueService.IsEmpty) return;
@@ -168,14 +171,20 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
             _ => RepeatMode.None
         };
     }
+
+    [RelayCommand]
+    private void SeekTo(double seconds)
+    {
+        _musicPlayer?.SeekTo(seconds);
+        PositionInSeconds = seconds;
+    }
     #endregion
 
     #region Event handlers
-    private async void OnPlayerPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    private void OnPlayerPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
         Action? updateAction = e.PropertyName switch
         {
-            nameof(IMusicPlayer.PositionInSeconds) => () => PositionInSeconds = _musicPlayer.PositionInSeconds,
             nameof(IMusicPlayer.PlaybackState) => () => IsPlaying = _musicPlayer.PlaybackState == PlaybackState.Playing,
             nameof(IMusicPlayer.DurationInSeconds) => () => DurationInSeconds = _musicPlayer.DurationInSeconds,
             _ => null
@@ -184,11 +193,30 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
         if (_dispatcherQueue.HasThreadAccess)
             updateAction.Invoke();
         else
-            await _dispatcherQueue.EnqueueAsync(updateAction);
+            _ = _dispatcherQueue.TryEnqueue(() => updateAction());
+    }
+
+    private void OnPlaybackPositionUpdated(double seconds)
+    {
+        if (_dispatcherQueue.HasThreadAccess)
+            PositionInSeconds = seconds;
+        else
+            _ = _dispatcherQueue?.TryEnqueue(() => PositionInSeconds = seconds);
     }
 
     private void OnPlayerPlaybackEnded(object? sender, EventArgs e)
     {
+        StopTrack();
+        if (_queueService.IsEmpty && RepeatMode == RepeatMode.None) return;
+        if (RepeatMode == RepeatMode.Single)
+        {
+            PlayInternal();
+            return;
+        }
+
+
+
+
         switch (RepeatMode, IsShuffleActive)
         {
             case (RepeatMode.Single, _):
@@ -200,12 +228,23 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
             case (_, true):
                 // Logic to play a random track can be added here
                 break;
-            default:
-                _musicPlayer.Stop();
-                break;
         }
     }
     #endregion
+
+    private void PlayInternal()
+    {
+        if (!IsTrackLoaded) return;
+        _musicPlayer.Play();
+        _playbackTracker.Start();
+    }
+
+    private void PauseInternal()
+    {
+        if (!IsTrackLoaded) return;
+        _musicPlayer.Pause();
+        _playbackTracker.Stop();
+    }
 
     private async Task<bool> LoadTrackInternalAsync(string source, CancellationToken token)
     {
@@ -216,6 +255,14 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
         PositionInSeconds = 0;
         AlbumArt = await BitmapConverters.ConvertBytesToImageSource(CurrentTrack.AlbumArt);
         return true;
+    }
+
+    private void SetPosition(double seconds)
+    {
+        if (_dispatcherQueue.HasThreadAccess)
+            PositionInSeconds = seconds;
+        else
+            _ = _dispatcherQueue.TryEnqueue(() => PositionInSeconds = seconds);
     }
 
     public void Dispose()

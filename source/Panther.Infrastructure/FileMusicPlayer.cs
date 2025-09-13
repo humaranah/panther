@@ -12,12 +12,11 @@ namespace Panther.Infrastructure;
 public class FileMusicPlayer : IMusicPlayer, IDisposable
 {
     // Constants
-    private const double VolumeThreshold = 0.01;
-    private const double PositionThreshold = 0.001;
+    public const double VolumeChangeThreshold = 0.01;
+    private const double SecondsChangeThreshold = 0.001;
 
     // Dependencies
     private readonly IBassProcessor _bass;
-    private readonly IPlaybackTimer _playbackTimer;
     private readonly ILogger<FileMusicPlayer> _logger;
 
     // State
@@ -31,35 +30,31 @@ public class FileMusicPlayer : IMusicPlayer, IDisposable
 
     // Events
     public event PropertyChangedEventHandler? PropertyChanged;
-    public event EventHandler<double>? PositionChanged;
     public event EventHandler? PlaybackEnded;
 
     public FileMusicPlayer(
         IBassProcessor bass,
-        IPlaybackTimer playbackTimer,
         ILogger<FileMusicPlayer> logger)
     {
         _bass = bass;
         if (_bass is IBassNotifier notifier)
             notifier.OperationError += OnBassOperationError;
         _bass.Init(); // Ensure BASS is initialized
-        _playbackTimer = playbackTimer;
-        _playbackTimer.Elapsed += OnPlaybackTimerElapsed;
         _logger = logger;
     }
 
+    #region Properties
     public float Volume
     {
         get => _volume;
         set
         {
-            if (!HasTrackLoaded) return;
-            if (Math.Abs(_volume - value) > VolumeThreshold)
-            {
-                _volume = value;
-                _channel.SetVolume(value);
-                PropertyChanged?.Invoke(this, new(nameof(Volume)));
-            }
+            var volume = Math.Clamp(value, 0f, 1f);
+            if (Math.Abs(_volume - volume) < VolumeChangeThreshold)
+                return;
+            _volume = volume;
+            _channel?.SetVolume(volume);
+            PropertyChanged?.Invoke(this, new(nameof(Volume)));
         }
     }
 
@@ -82,23 +77,10 @@ public class FileMusicPlayer : IMusicPlayer, IDisposable
         get => _durationInSeconds;
         private set
         {
-            if (Math.Abs(_durationInSeconds - value) > PositionThreshold)
+            if (Math.Abs(_durationInSeconds - value) > SecondsChangeThreshold)
             {
                 _durationInSeconds = value;
                 PropertyChanged?.Invoke(this, new(nameof(DurationInSeconds)));
-            }
-        }
-    }
-
-    public double PositionInSeconds
-    {
-        get => _positionInSeconds;
-        private set
-        {
-            if (Math.Abs(_positionInSeconds - value) > PositionThreshold)
-            {
-                _positionInSeconds = value;
-                PositionChanged?.Invoke(this, _positionInSeconds);
             }
         }
     }
@@ -120,7 +102,9 @@ public class FileMusicPlayer : IMusicPlayer, IDisposable
     public bool HasTrackLoaded =>
         !string.IsNullOrWhiteSpace(_trackSource) &&
         _channel is { Handle.IsEmpty: false };
+    #endregion
 
+    #region Dispose pattern
     public void Dispose()
     {
         Dispose(true);
@@ -138,7 +122,9 @@ public class FileMusicPlayer : IMusicPlayer, IDisposable
             _disposed = true;
         }
     }
+    #endregion
 
+    #region Public methods
     public async Task<bool> LoadTrackAsync(string sourceString, CancellationToken token)
     {
         PlaybackState = PlaybackState.Stopped;
@@ -157,50 +143,6 @@ public class FileMusicPlayer : IMusicPlayer, IDisposable
         }
     }
 
-    private void SubscribeChannelEvents(IBassChannel channel)
-    {
-        channel.PlaybackEnded += OnPlaybackEnded;
-        if (channel is IBassNotifier notifier)
-        {
-            notifier.OperationError += OnBassOperationError;
-        }
-    }
-
-    private void UnsubscribeChannelEvents(IBassChannel channel)
-    {
-        channel.PlaybackEnded -= OnPlaybackEnded;
-        if (channel is IBassNotifier notifier)
-        {
-            notifier.OperationError -= OnBassOperationError;
-        }
-    }
-
-    private bool LoadTrackInternal(string sourceString, CancellationToken token)
-    {
-        token.ThrowIfCancellationRequested();
-        if (_channel != null)
-        {
-            UnsubscribeChannelEvents(_channel);
-            _channel.Free();
-            _durationInSeconds = 0d;
-            _positionInSeconds = 0d;
-            _trackSource = null;
-        }
-
-        _channel = _bass.StreamCreateFile(sourceString);
-        if (_channel is null)
-        {
-            _trackSource = null;
-            return false;
-        }
-
-        TrackSource = sourceString;
-        DurationInSeconds = GetDurationInSeconds();
-        SubscribeChannelEvents(_channel);
-        _logger.LogDebug("Track {SourceString} loaded successfully", _trackSource);
-        return true;
-    }
-
     public void Play()
     {
         if (!HasTrackLoaded || PlaybackState == PlaybackState.Playing)
@@ -208,7 +150,6 @@ public class FileMusicPlayer : IMusicPlayer, IDisposable
         try
         {
             _channel.Play();
-            _playbackTimer.Start();
             PlaybackState = PlaybackState.Playing;
             _logger.LogDebug("Playback started: {TrackSource}", _trackSource);
         }
@@ -225,7 +166,6 @@ public class FileMusicPlayer : IMusicPlayer, IDisposable
         try
         {
             _channel.Pause();
-            _playbackTimer.Stop();
             PlaybackState = PlaybackState.Paused;
             _logger.LogDebug("Playback paused");
         }
@@ -242,9 +182,7 @@ public class FileMusicPlayer : IMusicPlayer, IDisposable
         try
         {
             _channel.Stop();
-            _playbackTimer.Stop();
             PlaybackState = PlaybackState.Stopped;
-            PositionInSeconds = 0d;
             _logger.LogDebug("Playback stopped");
         }
         catch (Exception ex)
@@ -270,15 +208,12 @@ public class FileMusicPlayer : IMusicPlayer, IDisposable
         return _positionInSeconds;
     }
 
-    public void Seek(double seconds)
+    public void SeekTo(double seconds)
     {
         if (!HasTrackLoaded) return;
         try
         {
-            _playbackTimer.Stop();
             _channel.SetPositionInSeconds(seconds);
-            PositionInSeconds = seconds;
-            _playbackTimer.Start();
         }
         catch (Exception ex)
         {
@@ -287,30 +222,64 @@ public class FileMusicPlayer : IMusicPlayer, IDisposable
                 $"Error seeking playback to position: {pos}", _trackSource, _positionInSeconds, ex);
         }
     }
+    #endregion
 
-    private void OnPlaybackTimerElapsed(object? sender, EventArgs e)
-    {
-        if (!HasTrackLoaded || _playbackState != PlaybackState.Playing)
-        {
-            _playbackTimer.Stop();
-            return;
-        }
-        PositionInSeconds = _channel.GetPositionInSeconds();
-    }
-
+    #region Event handlers
     private void OnPlaybackEnded(object? sender, EventArgs e)
     {
-        _playbackTimer.Stop();
         _logger.LogDebug("Playback ended for track: {TrackSource}", _trackSource);
         PlaybackEnded?.Invoke(this, EventArgs.Empty);
-        if (sender is IBassChannel channel)
-        {
-            UnsubscribeChannelEvents(channel);
-        }
     }
 
     private void OnBassOperationError(object? sender, BassOperationError e)
     {
         _logger.LogError("Channel error: {ErrorString}", e.ToString());
+    }
+    #endregion
+
+    private void SubscribeChannelEvents(IBassChannel channel)
+    {
+        channel.PlaybackEnded += OnPlaybackEnded;
+        if (channel is IBassNotifier notifier)
+        {
+            notifier.OperationError += OnBassOperationError;
+        }
+    }
+
+    private void UnsubscribeChannelEvents(IBassChannel channel)
+    {
+        channel.PlaybackEnded -= OnPlaybackEnded;
+        if (channel is IBassNotifier notifier)
+        {
+            notifier.OperationError -= OnBassOperationError;
+        }
+    }
+
+    private bool LoadTrackInternal(string sourceString, CancellationToken token)
+    {
+        var volume = _volume;
+        token.ThrowIfCancellationRequested();
+        if (_channel != null)
+        {
+            volume = _channel.GetVolume();
+            UnsubscribeChannelEvents(_channel);
+            _channel.Free();
+            _durationInSeconds = 0d;
+            _positionInSeconds = 0d;
+            _trackSource = null;
+        }
+
+        _channel = _bass.StreamCreateFile(sourceString);
+        if (_channel is null)
+        {
+            _trackSource = null;
+            return false;
+        }
+        Volume = volume;
+        TrackSource = sourceString;
+        DurationInSeconds = GetDurationInSeconds();
+        SubscribeChannelEvents(_channel);
+        _logger.LogDebug("Track {SourceString} loaded successfully", _trackSource);
+        return true;
     }
 }

@@ -1,11 +1,11 @@
 ﻿using Microsoft.Extensions.Logging;
 using Moq;
-using Panther.Core;
 using Panther.Core.Enums;
 using Panther.Core.Exceptions;
 using Panther.Infrastructure.BassWrapper;
 using Panther.Infrastructure.BassWrapper.Models;
 using Shouldly;
+using System.ComponentModel;
 using Un4seen.Bass;
 
 namespace Panther.Infrastructure.Tests;
@@ -13,7 +13,6 @@ namespace Panther.Infrastructure.Tests;
 public sealed class FileMusicPlayerTests : IDisposable
 {
     private readonly Mock<IBassProcessor> _bassMock = new();
-    private readonly Mock<IPlaybackTimer> _timerMock = new();
     private readonly Mock<IBassChannel> _channelMock = new();
     private readonly Mock<IBassNotifier> _notifierMock;
     private readonly Mock<ILogger<FileMusicPlayer>> _loggerMock = new();
@@ -26,7 +25,7 @@ public sealed class FileMusicPlayerTests : IDisposable
     public FileMusicPlayerTests()
     {
         _notifierMock = _channelMock.As<IBassNotifier>();
-        _musicPlayer = new FileMusicPlayer(_bassMock.Object, _timerMock.Object, _loggerMock.Object);
+        _musicPlayer = new FileMusicPlayer(_bassMock.Object, _loggerMock.Object);
         _bassMock
             .Setup(x => x.StreamCreateFile(It.IsAny<string>(), It.IsAny<BASSFlag>()))
             .Callback(() => _channelMock.SetupGet(x => x.Handle).Returns(1))
@@ -34,28 +33,35 @@ public sealed class FileMusicPlayerTests : IDisposable
     }
 
     #region Volume Tests
-    [Fact]
-    public void GetVolume_ShouldGetFromBass()
+    [Theory]
+    [InlineData(0.0f, false)] // Initial volume is 0, setting to 0 should not trigger update
+    [InlineData(0.5f, true)] // Change exceeds threshold, should update
+    [InlineData(1.0f, true)] // Change exceeds threshold, should update
+    [InlineData(-0.5f, false)] // Change is clamped to 0, which is the same as initial, should not update
+    [InlineData(1.5f, true)] // Change is clamped to 1, exceeds threshold from initial 0, should update
+    public async Task SetVolume_ShouldUpdate_WhenThresholdExceeded(float volumeToSet, bool shouldUpdate)
     {
         // Arrange
-        var actualVolume = 0f;
-        _bassMock.Setup(x => x.GetVolume()).Returns(0.5f);
+        const float initialVolume = 0f;
+        var expectedVolume = Math.Clamp(volumeToSet, 0f, 1f);
+        await _musicPlayer.LoadTrackAsync(FakeFilePath, CancellationToken.None);
+        _musicPlayer.Volume = initialVolume; // Set an initial volume
+        _channelMock.Setup(x => x.SetVolume(It.IsAny<float>())).Verifiable();
+        AttachPropertyChangedListener();
         // Act
-        actualVolume = _musicPlayer.Volume;
+        _musicPlayer.Volume = volumeToSet;
         // Assert
-        actualVolume.ShouldBe(0.5f);
-    }
-
-    [Fact]
-    public void SetVolume_ShouldSetToBass()
-    {
-        // Arrange
-        var actualVolume = 0f;
-        _bassMock.Setup(x => x.SetVolume(It.IsAny<float>())).Callback<float>(x => actualVolume = x);
-        // Act
-        _musicPlayer.Volume = 0.5f;
-        // Assert
-        actualVolume.ShouldBe(0.5f);
+        _musicPlayer.Volume.ShouldBe(expectedVolume);
+        if (shouldUpdate)
+        {
+            _propertiesChanged.ShouldContain(nameof(_musicPlayer.Volume));
+            _channelMock.Verify(x => x.SetVolume(expectedVolume), Times.Once);
+        }
+        else
+        {
+            _propertiesChanged.ShouldNotContain(nameof(_musicPlayer.Volume));
+            _channelMock.Verify(x => x.SetVolume(expectedVolume), Times.Never);
+        }
     }
     #endregion
 
@@ -332,20 +338,12 @@ public sealed class FileMusicPlayerTests : IDisposable
     public async Task Seek_ShouldUpdatePosition()
     {
         // Arrange
-        var actual = 0d;
-        var expected = 10d;
-        var positionChangedCalled = false;
-        _channelMock.Setup(x => x.SetPositionInSeconds(It.IsAny<double>()))
-            .Callback<double>(x => actual = x);
-        _musicPlayer.PositionChanged += (sender, args) => positionChangedCalled = true;
-        AttachPropertyChangedListener();
-        // Action
+        _channelMock.Setup(x => x.SetPositionInSeconds(It.IsAny<double>())).Verifiable();
         await _musicPlayer.LoadTrackAsync(FakeFilePath, CancellationToken.None);
-        _musicPlayer.Seek(expected);
-        await Task.Delay(5);
+        // Action
+        _musicPlayer.SeekTo(10D);
         // Assert
-        positionChangedCalled.ShouldBeTrue();
-        actual.ShouldBe(expected);
+        _channelMock.Verify(x => x.SetPositionInSeconds(10D), Times.Once);
     }
 
     [Fact]
@@ -356,48 +354,13 @@ public sealed class FileMusicPlayerTests : IDisposable
         _channelMock.Setup(x => x.SetPositionInSeconds(It.IsAny<double>()))
             .Throws(new Exception("Test exception"));
         // Act
-        Action act = () => _musicPlayer.Seek(10D);
+        Action act = () => _musicPlayer.SeekTo(10D);
         // Assert
         var exception = act.ShouldThrow<MusicPlayerException>();
         exception.ShouldSatisfyAllConditions(
-            e => e.Operation.ShouldBe(nameof(_musicPlayer.Seek)),
+            e => e.Operation.ShouldBe(nameof(_musicPlayer.SeekTo)),
             e => e.InnerException.ShouldNotBeNull(),
             e => e.InnerException!.Message.ShouldBe("Test exception"));
-    }
-    #endregion
-
-    #region PositionChanged Event Tests
-    [Theory]
-    [InlineData(50, PlaybackState.Stopped)]
-    [InlineData(50, PlaybackState.Playing)]
-    [InlineData(50, PlaybackState.Paused)]
-    [InlineData(100, PlaybackState.Playing)]
-    public async Task PositionChanged_ShouldBeRaisedByPlaybackTimer(double position, PlaybackState playbackState)
-    {
-        // Arrange
-        const double duration = 100d;
-        var actualPosition = 0d;
-        var expectedPosition = PlaybackState.Playing == playbackState ? position : 0d;
-        _channelMock.Setup(x => x.GetChannelLengthInSeconds()).Returns(duration);
-        _channelMock.Setup(x => x.GetPositionInSeconds()).Returns(position);
-        _musicPlayer.PositionChanged += (sender, args) => actualPosition = args;
-        await InitializePlayerOnState(playbackState);
-        // Act
-        _timerMock.Raise(x => x.Elapsed += null, EventArgs.Empty);
-        // Assert
-        actualPosition.ShouldBe(expectedPosition);
-    }
-
-    [Fact]
-    public void PositionChanged_ShouldNotBeRaisedWhenTrackNotLoaded()
-    {
-        // Arrange
-        var position = 0d;
-        _musicPlayer.PositionChanged += (sender, args) => position = 50d;
-        // Act
-        _timerMock.Raise(x => x.Elapsed += null, EventArgs.Empty);
-        // Assert
-        position.ShouldBe(0d);
     }
     #endregion
 

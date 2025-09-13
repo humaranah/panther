@@ -11,11 +11,11 @@ public static class DependencyInjectionExtensions
     {
         return services
             .AddSingleton<IRandomProvider, SharedRandomProvider>()
-            .AddTransient<IPlaybackTimer, PlaybackTimer>()
             .AddSingleton<IBassNetService, BassNetService>()
             .AddSingleton<IBassProcessor, BassProcessor>()
             .AddSingleton<ITrackInfoProvider, FileTrackProvider>()
             .AddSingleton<IPlayerQueueService, PlayerQueueService>()
-            .AddSingleton<IMusicPlayer, FileMusicPlayer>();
+            .AddSingleton<IMusicPlayer, FileMusicPlayer>()
+            .AddSingleton<IPlaybackPositionTracker, PlaybackPositionTracker>();
     }
 }

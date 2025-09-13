@@ -1,7 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Windows.ApplicationModel.Resources;
-using Panther.Core;
 using Panther.Infrastructure;
 using Panther.Infrastructure.BassWrapper;
 using Panther.WindowsApp.Services;
@@ -48,7 +47,6 @@ public static class StartUp
             .AddSingleton(new ResourceLoader())
             .AddSingleton<INavigationService, NavigationService>()
             .AddTransient<IFilePickerService, FilePickerService>()
-            .AddSingleton<IPlaybackTimer, PlaybackTimer>()
             .AddTransient<NavigationViewModel>()
             .AddTransient<PlayerViewModel>()
             .AddLogging(builder => builder.ClearProviders().AddSerilog(Log.Logger));

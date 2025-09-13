@@ -1,6 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Input;
 using Panther.WindowsApp.ViewModels;
 
 // To learn more about WinUI, the WinUI project structure,
@@ -14,29 +14,30 @@ public sealed partial class PlayerControl : UserControl
     {
         InitializeComponent();
         ViewModel = App.Services.GetRequiredService<PlayerViewModel>();
+        ViewModel.PropertyChanged += ViewModel_PropertyChanged;
         DataContext = ViewModel;
-        Loaded += OnLoaded;
-        Unloaded += OnUnloaded;
     }
 
-    private void OnLoaded(object sender, RoutedEventArgs e)
+    private void ViewModel_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
     {
-        ViewModel.PositionChanged += OnPositionChanged;
-    }
-
-    private void OnUnloaded(object sender, RoutedEventArgs e)
-    {
-        ViewModel.PositionChanged -= OnPositionChanged;
+        if (e.PropertyName == nameof(ViewModel.PositionInSeconds) && !ViewModel.IsSeeking)
+        {
+            SeekBar.Value = ViewModel.PositionInSeconds;
+        }
     }
 
     public PlayerViewModel ViewModel { get; private set; }
 
-    private void OnPositionChanged(object? sender, double position)
+    private void SeekBar_ManipulationStarted(object sender, ManipulationStartedRoutedEventArgs e)
     {
-        _ = DispatcherQueue.TryEnqueue(() =>
-        {
-            SeekBar.Value = position;
-            ViewModel.PositionInSeconds = (int)position;
-        });
+        if (ViewModel.IsSeeking) return;
+        ViewModel.IsSeeking = true;
+    }
+
+    private void SeekBar_PointerReleased(object sender, PointerRoutedEventArgs e)
+    {
+        if (!ViewModel.IsSeeking) return;
+        ViewModel.IsSeeking = false;
+        ViewModel.SeekToCommand.Execute(SeekBar.Value);
     }
 }

@@ -13,6 +13,7 @@
 
     <UserControl.Resources>
         <cv:SecondsToTimeConverter x:Key="SecondsToTime" />
+        <SineEase x:Key="EaseInOut" EasingMode="EaseInOut"/>
     </UserControl.Resources>
 
     <Grid>
@@ -24,6 +25,7 @@
                     </VisualState.StateTriggers>
                     <VisualState.Setters>
                         <Setter Target="TrackInfo.Visibility" Value="Collapsed" />
+                        <Setter Target="AudioPanel.Visibility" Value="Collapsed" />
                     </VisualState.Setters>
                 </VisualState>
                 <VisualState x:Name="MediumState">
@@ -33,6 +35,11 @@
                     <VisualState.Setters>
                         <Setter Target="TrackInfo.Visibility" Value="Visible" />
                         <Setter Target="AlbumArt.Visibility" Value="Collapsed" />
+                        <Setter Target="AudioPanel.Visibility" Value="Visible" />
+                        <Setter Target="VolumeSlider.Margin" Value="0,0,15,0" />
+                        <Setter Target="VolumeSlider.Width" Value="60" />
+                        <Setter Target="PlaybackTimePanel.Orientation" Value="Vertical" />
+                        <Setter Target="PlaybackTimeSeparator.Visibility" Value="Collapsed" />
                     </VisualState.Setters>
                 </VisualState>
                 <VisualState x:Name="WideState">
@@ -42,6 +49,10 @@
                     <VisualState.Setters>
                         <Setter Target="TrackInfo.Visibility" Value="Visible" />
                         <Setter Target="AlbumArt.Visibility" Value="Visible" />
+                        <Setter Target="VolumeSlider.Margin" Value="0,0,60,0" />
+                        <Setter Target="VolumeSlider.Width" Value="120" />
+                        <Setter Target="PlaybackTimePanel.Orientation" Value="Horizontal" />
+                        <Setter Target="PlaybackTimeSeparator.Visibility" Value="Visible" />
                     </VisualState.Setters>
                 </VisualState>
             </VisualStateGroup>
@@ -97,7 +108,7 @@
                            Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
                            HorizontalTextAlignment="Left"
                            Text="{x:Bind ViewModel.TrackArtist, Mode=OneWay}"
-                           TextWrapping="WrapWholeWords" />
+                           TextWrapping="WrapWholeWords"/>
             </StackPanel>
         </Grid>
 
@@ -108,9 +119,12 @@
                 IsEnabled="{x:Bind ViewModel.IsTrackLoaded, Mode=OneWay}"
                 Minimum="0"
                 Maximum="{x:Bind ViewModel.DurationInSeconds, Mode=OneWay}"
-                Value="0"
                 IsThumbToolTipEnabled="{x:Bind ViewModel.IsTrackLoaded, Mode=OneWay}"
-                ThumbToolTipValueConverter="{StaticResource SecondsToTime}"/>
+                ThumbToolTipValueConverter="{StaticResource SecondsToTime}"
+                ManipulationMode="All"
+                ManipulationStarted="SeekBar_ManipulationStarted"
+                PointerReleased="SeekBar_PointerReleased"
+                PointerCaptureLost="SeekBar_PointerReleased" />
 
         <!-- Player Controls section -->
         <StackPanel Grid.Row="3" Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Top">
@@ -131,7 +145,8 @@
             
             <!-- Play Button -->
             <Button Style="{StaticResource PlayerFlatPlayButtonStyle}"
-                    Command="{x:Bind ViewModel.PlayPauseCommand}">
+                    Command="{x:Bind ViewModel.PlayPauseCommand}"
+                    AllowDrop="True">
                 <Border BorderThickness="1.3"
                         CornerRadius="24"
                         Width="48"
@@ -146,7 +161,8 @@
             
             <!-- Next Button -->
             <Button Style="{StaticResource PlayerFlat48ButtonStyle}"
-                    Command="{x:Bind ViewModel.NextTrackCommand}">
+                    Command="{x:Bind ViewModel.NextTrackCommand}"
+                    AllowDrop="True">
                 <FontIcon Style="{StaticResource PlayerButtonPathIcon}"
                           Glyph="&#xE82D;" />
             </Button>
@@ -161,27 +177,28 @@
         </StackPanel>
 
         <!-- Audio section -->
-        <StackPanel Grid.Column="2"
+        <StackPanel x:Name="AudioPanel"
+                    Grid.Column="2"
                     Grid.Row="2"
                     Grid.RowSpan="2"
-                    Margin="0,0,60,0"
                     Orientation="Horizontal"
                     HorizontalAlignment="Right"
                     VerticalAlignment="Center">
             
             <!-- Track Duration -->
-            <StackPanel Margin="0,0,10,0"
+            <StackPanel x:Name="PlaybackTimePanel"
+                        Orientation="Horizontal"
                         VerticalAlignment="Center"
-                        HorizontalAlignment="Center">
-                <TextBlock x:Name="PositionTime"
-                           FontSize="12"
-                           HorizontalAlignment="Center"
-                           Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
-                           Text="{x:Bind ViewModel.PositionInSeconds, Mode=OneWay, Converter={StaticResource SecondsToTime}}" />
-                <TextBlock FontSize="12"
-                           HorizontalAlignment="Center"
-                           Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
-                           Text="{x:Bind ViewModel.DurationInSeconds, Mode=OneWay, Converter={StaticResource SecondsToTime}}" />
+                        HorizontalAlignment="Right">
+                <StackPanel.Resources>
+                    <Style TargetType="TextBlock">
+                        <Setter Property="FontSize" Value="14" />
+                    </Style>
+                </StackPanel.Resources>
+
+                <TextBlock Text="{x:Bind ViewModel.PositionInSeconds, Mode=OneWay, Converter={StaticResource SecondsToTime}}" />
+                <TextBlock x:Name="PlaybackTimeSeparator" Text=" / " />
+                <TextBlock Text="{x:Bind ViewModel.DurationInSeconds, Mode=OneWay, Converter={StaticResource SecondsToTime}}" />
             </StackPanel>
 
             <!-- Mute button -->
@@ -193,10 +210,12 @@
             </ToggleButton>
 
             <!-- Volume slider -->
-            <Slider Width="120"
+            <Slider x:Name="VolumeSlider"
+                    Width="120"
                     VerticalAlignment="Center"
                     Minimum="0"
                     Maximum="100"
+                    Margin="0,0,60,0"
                     SmallChange="1"
                     LargeChange="10"
                     TickFrequency="50"
