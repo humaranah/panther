@@ -1,0 +1,17 @@
+<Solution>
+  <Folder Name="/source/">
+    <Project Path="source\Panther.Core\Panther.Core.csproj" />
+    <Project Path="source\Panther.Infrastructure\Panther.Infrastructure.csproj" />
+    <Project Path="source\Panther.WindowsApp\Panther.WindowsApp.csproj">
+      <Platform Solution="Debug|*" Project="x64" />
+      <Deploy Solution="Debug|*" />
+    </Project>
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests\Panther.Infrastructure.Tests\Panther.Infrastructure.Tests.csproj" />
+  </Folder>
+  <Folder Name="/Solution items/">
+    <File Path="LICENSE" />
+    <File Path="README.md" />
+  </Folder>
+</Solution>
