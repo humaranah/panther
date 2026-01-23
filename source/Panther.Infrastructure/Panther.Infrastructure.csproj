@@ -6,6 +6,10 @@
   </PropertyGroup>
   <PropertyGroup>
     <BassNetDllPath Condition=" '$(BASSNET_DLL_PATH)' != '' ">$(BASSNET_DLL_PATH)</BassNetDllPath>
+    <BassEmail Condition=" '$(BASS_EMAIL)' != '' ">$(BASS_EMAIL)</BassEmail>
+    <BassEmail Condition=" '$(BASS_EMAIL)' == '' ">YOUR_EMAIL_HERE</BassEmail>
+    <BassKey Condition=" '$(BASS_KEY)' != '' ">$(BASS_KEY)</BassKey>
+    <BassKey Condition=" '$(BASS_KEY)' == '' ">YOUR_KEY_HERE</BassKey>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\Panther.Core\Panther.Core.csproj" />
@@ -19,4 +23,23 @@
       <HintPath>$(BassNetDllPath)\Bass.Net.dll</HintPath>
     </Reference>
   </ItemGroup>
+  <Target Name="GenerateBassCredentials" BeforeTargets="CoreCompile">
+    <PropertyGroup>
+      <BassCredentialsFile>$(IntermediateOutputPath)BassCredentials.g.cs</BassCredentialsFile>
+      <BassCredentialsContent>
+<![CDATA[namespace Panther.Infrastructure.Constants%3b
+public class BassCredentials
+{
+    public const string Email = "$(BassEmail)"%3b
+    public const string Key = "$(BassKey)"%3b
+}
+]]>
+      </BassCredentialsContent>
+    </PropertyGroup>
+    <WriteLinesToFile File="$(BassCredentialsFile)" Lines="$(BassCredentialsContent)" Overwrite="true" />
+    <ItemGroup>
+      <Compile Include="$(BassCredentialsFile)" />
+      <FileWrites Include="$(BassCredentialsFile)" />
+    </ItemGroup>
+  </Target>
 </Project>
