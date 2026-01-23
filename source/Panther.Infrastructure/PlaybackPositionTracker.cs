@@ -35,7 +35,7 @@ public sealed class PlaybackPositionTracker : IPlaybackPositionTracker, IDisposa
     {
         if (!_disposed && _timer != null)
         {
-            _timer?.Dispose();
+            _timer.Dispose();
             _disposed = true;
         }
         GC.SuppressFinalize(this);

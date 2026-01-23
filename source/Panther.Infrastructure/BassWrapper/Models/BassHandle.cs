@@ -24,7 +24,7 @@ public readonly struct BassHandle : IEquatable<BassHandle>, IEquatable<int>
 
     public override readonly bool Equals(object? obj) => obj is BassHandle other && Equals(other);
 
-    public override readonly int GetHashCode() => _handle.GetHashCode();
+    public override readonly int GetHashCode() => _handle;
 
     public static implicit operator int(BassHandle handle) => handle._handle;
     public static implicit operator BassHandle(int handle) => new(handle);

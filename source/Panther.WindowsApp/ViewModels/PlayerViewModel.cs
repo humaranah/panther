@@ -175,7 +175,7 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
     [RelayCommand]
     private void SeekTo(double seconds)
     {
-        _musicPlayer?.SeekTo(seconds);
+        _musicPlayer.SeekTo(seconds);
         PositionInSeconds = seconds;
     }
     #endregion
@@ -201,26 +201,17 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
         if (_dispatcherQueue.HasThreadAccess)
             PositionInSeconds = seconds;
         else
-            _ = _dispatcherQueue?.TryEnqueue(() => PositionInSeconds = seconds);
+            _ = _dispatcherQueue.TryEnqueue(() => PositionInSeconds = seconds);
     }
 
     private void OnPlayerPlaybackEnded(object? sender, EventArgs e)
     {
         StopTrack();
         if (_queueService.IsEmpty && RepeatMode == RepeatMode.None) return;
-        if (RepeatMode == RepeatMode.Single)
-        {
-            PlayInternal();
-            return;
-        }
-
-
-
-
         switch (RepeatMode, IsShuffleActive)
         {
             case (RepeatMode.Single, _):
-                _musicPlayer.Play();
+                PlayInternal();
                 break;
             case (RepeatMode.All, false):
                 // Logic to play the next track in the playlist can be added here
