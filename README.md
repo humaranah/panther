@@ -12,6 +12,12 @@ A music player just the way I like it.
 
 ## Getting Started
 
+### Prerequisites
+
+This application uses Bass.Net for audio playback. You'll need to provide your Bass.Net credentials during build.
+
+### Build Instructions
+
 1. Install dependencies:
 
     ```ps
@@ -19,11 +25,21 @@ A music player just the way I like it.
     dotnet restore
     ```
 
-2. Build the application:
+2. Build the application with your Bass.Net credentials:
 
     ```ps
+    dotnet build -p:BassEmail="your-email@example.com" -p:BassKey="your-bass-net-key"
+    ```
+
+    Or set environment variables and build:
+
+    ```ps
+    $env:BASS_EMAIL="your-email@example.com"
+    $env:BASS_KEY="your-bass-net-key"
     dotnet build
     ```
+
+    Note: The credentials are resolved at compile-time and embedded as constants in the compiled assembly.
 
 ## Screenshot
 
