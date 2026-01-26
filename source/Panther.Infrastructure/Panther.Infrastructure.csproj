@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
@@ -6,10 +6,6 @@
   </PropertyGroup>
   <PropertyGroup>
     <BassNetDllPath Condition=" '$(BASSNET_DLL_PATH)' != '' ">$(BASSNET_DLL_PATH)</BassNetDllPath>
-    <BassEmail Condition=" '$(BASS_EMAIL)' != '' ">$(BASS_EMAIL)</BassEmail>
-    <BassEmail Condition=" '$(BASS_EMAIL)' == '' ">YOUR_EMAIL_HERE</BassEmail>
-    <BassKey Condition=" '$(BASS_KEY)' != '' ">$(BASS_KEY)</BassKey>
-    <BassKey Condition=" '$(BASS_KEY)' == '' ">YOUR_KEY_HERE</BassKey>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\Panther.Core\Panther.Core.csproj" />
@@ -23,22 +19,6 @@
       <HintPath>$(BassNetDllPath)\Bass.Net.dll</HintPath>
     </Reference>
   </ItemGroup>
-  <Target Name="GenerateBassCredentials" BeforeTargets="CoreCompile">
-    <PropertyGroup>
-      <BassCredentialsFile>$(IntermediateOutputPath)BassCredentials.g.cs</BassCredentialsFile>
-    </PropertyGroup>
-    <ItemGroup>
-      <BassCredentialsLines Include="namespace Panther.Infrastructure.Constants%3B" />
-      <BassCredentialsLines Include="public class BassCredentials" />
-      <BassCredentialsLines Include="{" />
-      <BassCredentialsLines Include="    public const string Email = &quot;$(BassEmail)&quot;%3B" />
-      <BassCredentialsLines Include="    public const string Key = &quot;$(BassKey)&quot;%3B" />
-      <BassCredentialsLines Include="}" />
-    </ItemGroup>
-    <WriteLinesToFile File="$(BassCredentialsFile)" Lines="@(BassCredentialsLines)" Overwrite="true" Encoding="UTF-8" />
-    <ItemGroup>
-      <Compile Include="$(BassCredentialsFile)" />
-      <FileWrites Include="$(BassCredentialsFile)" />
-    </ItemGroup>
-  </Target>
+  
+  <Import Project="BassCredentials.targets" />
 </Project>
