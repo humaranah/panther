@@ -197,7 +197,7 @@
                 </StackPanel.Resources>
 
                 <TextBlock Text="{x:Bind ViewModel.PositionInSeconds, Mode=OneWay, Converter={StaticResource SecondsToTime}}" />
-                <TextBlock x:Name="PlaybackTimeSeparator" Text=" / " />
+                <TextBlock x:Name="PlaybackTimeSeparator" Text="/" Margin="4,0" />
                 <TextBlock Text="{x:Bind ViewModel.DurationInSeconds, Mode=OneWay, Converter={StaticResource SecondsToTime}}" />
             </StackPanel>
 

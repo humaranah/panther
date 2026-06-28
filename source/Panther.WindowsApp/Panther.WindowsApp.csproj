@@ -21,6 +21,7 @@
     <None Remove="Views\Controls\NavigationControl.xaml" />
     <None Remove="Views\Pages\AlbumsPage.xaml" />
     <None Remove="Views\Pages\ArtistsPage.xaml" />
+    <None Remove="Views\Pages\DebugPage.xaml" />
     <None Remove="Views\Pages\PlaylistsPage.xaml" />
     <None Remove="Views\Pages\SettingsPage.xaml" />
     <None Remove="Views\Pages\SongsPage.xaml" />
@@ -73,6 +74,11 @@
     <Content Update="Assets\Visual\PantherLogo.svg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <Page Update="Views\Pages\DebugPage.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
   </ItemGroup>
   <ItemGroup>
     <Page Update="Views\Pages\SettingsPage.xaml">

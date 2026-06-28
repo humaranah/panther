@@ -8,6 +8,7 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:controls="using:Panther.WindowsApp.Views.Controls"
+    xmlns:nav="using:Panther.WindowsApp.Components.Navigation"
     mc:Ignorable="d"
     Title="Panther">
 
@@ -24,7 +25,7 @@
         </Grid.RowDefinitions>
 
         <controls:PantherTitleBar />
-        <controls:NavigationControl Grid.Row="1" Grid.RowSpan="2" />
+        <nav:NavigationControl Grid.Row="1" Grid.RowSpan="2" />
         <controls:PlayerControl Grid.Row="2" Grid.RowSpan="2" />
     </Grid>
 </Window>
