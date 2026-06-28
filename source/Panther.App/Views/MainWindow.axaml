@@ -1,0 +1,50 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:Panther.Core.ViewModels"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+        x:Class="Panther.App.Views.MainWindow"
+        x:DataType="vm:MainWindowViewModel"
+        Icon="/Assets/avalonia-logo.ico"
+        Title="{Binding WindowTitle}"
+        Width="1024" Height="680"
+        WindowStartupLocation="CenterScreen">
+
+    <Design.DataContext>
+        <vm:MainWindowViewModel/>
+    </Design.DataContext>
+
+    <Grid x:Name="RootGrid" RowDefinitions="32,*">
+
+        <Grid x:Name="TitleBarGrid" Grid.Row="0" Background="Transparent"
+              PointerPressed="TitleBar_PointerPressed" DoubleTapped="TitleBar_DoubleTapped">
+            <StackPanel Orientation="Horizontal"
+                        VerticalAlignment="Center"
+                        Margin="8,0,0,0"
+                        IsHitTestVisible="False">
+                <Border Width="16" Height="16"
+                        Background="#0078D4"
+                        CornerRadius="3"
+                        Margin="0,0,8,0">
+                    <TextBlock Text="P"
+                               FontSize="9"
+                               FontWeight="Bold"
+                               Foreground="White"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Center"/>
+                </Border>
+                <TextBlock Text="{Binding ChromeTitle}"
+                           VerticalAlignment="Center"
+                           FontSize="12"/>
+            </StackPanel>
+        </Grid>
+
+        <Grid Grid.Row="1">
+            <TextBlock Text="{Binding Greeting}"
+                       HorizontalAlignment="Center"
+                       VerticalAlignment="Center"/>
+        </Grid>
+
+    </Grid>
+</Window>

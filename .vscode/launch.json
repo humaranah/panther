@@ -1,0 +1,27 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Panther (Debug)",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build",
+            "program": "${workspaceFolder}/source/Panther.App/bin/Debug/net10.0/Panther.App",
+            "args": [],
+            "cwd": "${workspaceFolder}",
+            "stopAtEntry": false,
+            "console": "internalConsole"
+        },
+        {
+            "name": "Panther (Release)",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build:release",
+            "program": "${workspaceFolder}/source/Panther.App/bin/Release/net10.0/Panther.App",
+            "args": [],
+            "cwd": "${workspaceFolder}",
+            "stopAtEntry": false,
+            "console": "internalConsole"
+        }
+    ]
+}
