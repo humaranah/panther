@@ -1,0 +1,12 @@
+<Solution>
+  <Folder Name="/source/">
+    <Project Path="source/Panther.App/Panther.App.csproj" />
+    <Project Path="source/Panther.Core/Panther.Core.csproj" />
+    <Project Path="source/Panther.Infrastructure/Panther.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Panther.App.Tests/Panther.App.Tests.csproj" />
+    <Project Path="tests/Panther.Core.Tests/Panther.Core.Tests.csproj" />
+    <Project Path="tests/Panther.Infrastructure.Tests/Panther.Infrastructure.Tests.csproj" />
+  </Folder>
+</Solution>
