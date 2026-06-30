@@ -2,6 +2,7 @@ using System;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Media;
+using FluentAvalonia.UI.Controls;
 using Panther.App.Platform.Windows;
 
 namespace Panther.App.Views;
@@ -50,6 +51,20 @@ public partial class MainWindow : Window
         base.OnOpened(e);
         if (OperatingSystem.IsWindows())
             WindowsChrome.ApplyRoundedCorners(this);
+    }
+
+    private void NavigationView_SelectionChanged(object? sender, FANavigationViewSelectionChangedEventArgs e)
+    {
+        if (DataContext is not Panther.Core.ViewModels.MainWindowViewModel vm) return;
+
+        if (sender is FANavigationView nav && ReferenceEquals(e.SelectedItemContainer, nav.SettingsItem))
+        {
+            vm.NavigateTo("settings");
+            return;
+        }
+
+        var tag = (e.SelectedItemContainer as FANavigationViewItem)?.Tag as string;
+        if (tag is not null) vm.NavigateTo(tag);
     }
 
     private void TitleBar_PointerPressed(object? sender, PointerPressedEventArgs e) =>
