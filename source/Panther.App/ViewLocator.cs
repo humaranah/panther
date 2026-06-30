@@ -17,8 +17,8 @@ public class ViewLocator : IDataTemplate
             return null;
         
         var name = param.GetType().FullName!
-            .Replace("Panther.Core.ViewModels", "Panther.App.Views", StringComparison.Ordinal)
-            .Replace("ViewModel", "", StringComparison.Ordinal);
+            .Replace("Panther.Core.ViewModels", "Panther.App.Pages", StringComparison.Ordinal)
+            .Replace("ViewModel", "Page", StringComparison.Ordinal);
         var type = Type.GetType(name + ", Panther.App");
 
         if (type != null)

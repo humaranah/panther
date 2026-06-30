@@ -22,6 +22,7 @@
       <PrivateAssets Condition="'$(Configuration)' != 'Debug'">All</PrivateAssets>
     </PackageReference>
     <PackageReference Include="FluentAvaloniaUI" Version="3.0.0" />
+    <PackageReference Include="FluentIcons.Avalonia.Fluent" Version="2.1.331" />
   </ItemGroup>
 
   <ItemGroup>

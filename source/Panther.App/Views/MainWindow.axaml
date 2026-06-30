@@ -1,6 +1,8 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:Panther.Core.ViewModels"
+        xmlns:ui="using:FluentAvalonia.UI.Controls"
+        xmlns:fi="using:FluentIcons.Avalonia.Fluent"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
@@ -40,11 +42,33 @@
             </StackPanel>
         </Grid>
 
-        <Grid Grid.Row="1">
-            <TextBlock Text="{Binding Greeting}"
-                       HorizontalAlignment="Center"
-                       VerticalAlignment="Center"/>
-        </Grid>
+        <ui:FANavigationView x:Name="NavigationView"
+                             Grid.Row="1"
+                             PaneDisplayMode="Top"
+                             IsBackButtonVisible="False"
+                             IsPaneToggleButtonVisible="False"
+                             IsSettingsVisible="True"
+                             SelectionChanged="NavigationView_SelectionChanged">
+            <ui:FANavigationView.MenuItems>
+                <ui:FANavigationViewItem Content="Now Playing" Tag="now-playing" IsSelected="True">
+                    <ui:FANavigationViewItem.IconSource>
+                        <fi:SymbolIconSource Symbol="Play"/>
+                    </ui:FANavigationViewItem.IconSource>
+                </ui:FANavigationViewItem>
+                <ui:FANavigationViewItem Content="Library" Tag="library">
+                    <ui:FANavigationViewItem.IconSource>
+                        <fi:SymbolIconSource Symbol="Library"/>
+                    </ui:FANavigationViewItem.IconSource>
+                </ui:FANavigationViewItem>
+                <ui:FANavigationViewItem Content="Playlists" Tag="playlists">
+                    <ui:FANavigationViewItem.IconSource>
+                        <fi:SymbolIconSource Symbol="TextBulletList"/>
+                    </ui:FANavigationViewItem.IconSource>
+                </ui:FANavigationViewItem>
+            </ui:FANavigationView.MenuItems>
+
+            <ContentControl Content="{Binding CurrentPage}"/>
+        </ui:FANavigationView>
 
     </Grid>
 </Window>
