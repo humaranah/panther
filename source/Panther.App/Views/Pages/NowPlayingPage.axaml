@@ -1,7 +1,7 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:Panther.Core.ViewModels"
-             x:Class="Panther.App.Pages.NowPlayingPage"
+             x:Class="Panther.App.Views.Pages.NowPlayingPage"
              x:DataType="vm:NowPlayingViewModel">
 
     <Grid RowDefinitions="*,Auto,*">
