@@ -1,6 +1,6 @@
 using Avalonia.Controls;
 
-namespace Panther.App.Pages;
+namespace Panther.App.Views.Pages;
 
 public partial class PlaylistsPage : UserControl
 {
