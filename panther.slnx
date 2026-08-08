@@ -7,6 +7,7 @@
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Panther.App.Tests/Panther.App.Tests.csproj" />
+    <Project Path="tests/Panther.Core.Audio.Tests/Panther.Core.Audio.Tests.csproj" />
     <Project Path="tests/Panther.Core.Tests/Panther.Core.Tests.csproj" />
     <Project Path="tests/Panther.Infrastructure.Tests/Panther.Infrastructure.Tests.csproj" />
   </Folder>
