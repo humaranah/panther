@@ -1,6 +1,7 @@
 <Solution>
   <Folder Name="/source/">
     <Project Path="source/Panther.App/Panther.App.csproj" />
+    <Project Path="source/Panther.Core.Audio/Panther.Core.Audio.csproj" Id="676fcf9b-2ccc-4856-b67b-29ddb0ebf300" />
     <Project Path="source/Panther.Core/Panther.Core.csproj" />
     <Project Path="source/Panther.Infrastructure/Panther.Infrastructure.csproj" />
   </Folder>

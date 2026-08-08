@@ -26,6 +26,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Panther.Core.Audio\Panther.Core.Audio.csproj" />
     <ProjectReference Include="..\Panther.Infrastructure\Panther.Infrastructure.csproj" />
   </ItemGroup>
 </Project>
