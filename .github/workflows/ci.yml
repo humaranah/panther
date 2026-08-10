@@ -1,0 +1,79 @@
+name: CI
+
+on:
+  push:
+    paths: ["**/*.cs"]
+  pull_request:
+    branches: [main, develop]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+
+jobs:
+  build-test:
+    # Panther.Core.Audio ships a prebuilt native miniaudio.dll for win-x64 only,
+    # so build/test needs to run on Windows.
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Restore
+        run: dotnet restore panther.slnx
+
+      - name: Build
+        run: dotnet build panther.slnx -c Release --no-restore
+
+      - name: Install dotnet-coverage
+        run: dotnet tool install --global dotnet-coverage
+
+      - name: Test with coverage
+        run: >
+          dotnet-coverage collect
+          --settings .runsettings
+          --output coverage.cobertura.xml
+          --output-format cobertura
+          -- dotnet test panther.slnx -c Release --no-build
+          --logger trx
+          --results-directory TestResults
+
+      - name: Generate coverage report
+        if: always()
+        uses: danielpalme/ReportGenerator-GitHub-Action@5
+        with:
+          reports: coverage.cobertura.xml
+          targetdir: coverage-report
+          reporttypes: "Html;MarkdownSummaryGithub"
+
+      - name: Add coverage summary
+        if: always()
+        run: Get-Content coverage-report/SummaryGithub.md | Add-Content -Path $env:GITHUB_STEP_SUMMARY
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: TestResults/**/*.trx
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage-report
