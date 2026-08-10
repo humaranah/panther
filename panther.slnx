@@ -1,11 +1,13 @@
 <Solution>
   <Folder Name="/source/">
     <Project Path="source/Panther.App/Panther.App.csproj" />
+    <Project Path="source/Panther.Core.Audio/Panther.Core.Audio.csproj" Id="676fcf9b-2ccc-4856-b67b-29ddb0ebf300" />
     <Project Path="source/Panther.Core/Panther.Core.csproj" />
     <Project Path="source/Panther.Infrastructure/Panther.Infrastructure.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Panther.App.Tests/Panther.App.Tests.csproj" />
+    <Project Path="tests/Panther.Core.Audio.Tests/Panther.Core.Audio.Tests.csproj" />
     <Project Path="tests/Panther.Core.Tests/Panther.Core.Tests.csproj" />
     <Project Path="tests/Panther.Infrastructure.Tests/Panther.Infrastructure.Tests.csproj" />
   </Folder>

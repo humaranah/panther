@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RunSettings>
+  <DataCollectionRunSettings>
+    <DataCollectors>
+      <DataCollector friendlyName="Code Coverage" uri="datacollector://Microsoft/CodeCoverage/2.0">
+        <Configuration>
+          <CodeCoverage>
+            <ModulePaths>
+              <Exclude>
+                <!-- Excludes the *.Tests projects themselves (Panther.Core.Tests,
+                     Panther.Core.Audio.Tests, Panther.Infrastructure.Tests, Panther.App.Tests) -
+                     coverage of test code isn't meaningful. -->
+                <ModulePath>.*\.tests\.dll$</ModulePath>
+                <!-- Test host/runner and third-party test framework noise. -->
+                <ModulePath>.*testhost.*</ModulePath>
+                <ModulePath>.*\\xunit.*\.dll$</ModulePath>
+                <ModulePath>.*microsoft\.testplatform.*</ModulePath>
+                <ModulePath>.*microsoft\.visualstudio\.testplatform.*</ModulePath>
+              </Exclude>
+            </ModulePaths>
+            <UseVerifiableInstrumentation>True</UseVerifiableInstrumentation>
+            <AllowLowIntegrityProcesses>True</AllowLowIntegrityProcesses>
+            <CollectFromChildProcesses>True</CollectFromChildProcesses>
+            <CollectAspDotNet>False</CollectAspDotNet>
+          </CodeCoverage>
+        </Configuration>
+      </DataCollector>
+    </DataCollectors>
+  </DataCollectionRunSettings>
+</RunSettings>
