@@ -2,24 +2,24 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Panther (Debug)",
+            "name": "Panther.App.Windows (Debug)",
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "build",
-            "program": "${workspaceFolder}/source/Panther.App/bin/Debug/net10.0/Panther.App",
+            "program": "${workspaceFolder}/source/Panther.App.Windows/bin/x64/Debug/net10.0-windows10.0.19041.0/win-x64/AppX/Panther.App.Windows.exe",
             "args": [],
-            "cwd": "${workspaceFolder}",
+            "cwd": "${workspaceFolder}/source/Panther.App.Windows/bin/x64/Debug/net10.0-windows10.0.19041.0/win-x64/AppX",
             "stopAtEntry": false,
             "console": "internalConsole"
         },
         {
-            "name": "Panther (Release)",
+            "name": "Panther.App.Windows (Release)",
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "build:release",
-            "program": "${workspaceFolder}/source/Panther.App/bin/Release/net10.0/Panther.App",
+            "program": "${workspaceFolder}/source/Panther.App.Windows/bin/x64/Release/net10.0-windows10.0.19041.0/win-x64/Panther.App.Windows.exe",
             "args": [],
-            "cwd": "${workspaceFolder}",
+            "cwd": "${workspaceFolder}/source/Panther.App.Windows/bin/x64/Release/net10.0-windows10.0.19041.0/win-x64",
             "stopAtEntry": false,
             "console": "internalConsole"
         }

@@ -8,7 +8,7 @@
             <ModulePaths>
               <Exclude>
                 <!-- Excludes the *.Tests projects themselves (Panther.Core.Tests,
-                     Panther.Core.Audio.Tests, Panther.Infrastructure.Tests, Panther.App.Tests) -
+                     Panther.Core.Audio.Tests, Panther.Infrastructure.Tests, Panther.App.Windows.Tests) -
                      coverage of test code isn't meaningful. -->
                 <ModulePath>.*\.tests\.dll$</ModulePath>
                 <!-- Test host/runner and third-party test framework noise. -->
