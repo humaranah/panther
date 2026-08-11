@@ -10,7 +10,7 @@
 
   <Identity
     Name="3d5363cb-c850-4ab1-9222-66329ace8f23"
-    Publisher="CN=humar"
+    Publisher="CN=Humberto Arana"
     Version="1.0.0.0" />
 
   <mp:PhoneIdentity PhoneProductId="3d5363cb-c850-4ab1-9222-66329ace8f23" PhonePublisherId="00000000-0000-0000-0000-000000000000"/>

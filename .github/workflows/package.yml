@@ -1,0 +1,62 @@
+# Builds a signed, sideloadable MSIX package for Panther.App.Windows.
+name: Package MSIX
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+  Project_Path: source/Panther.App.Windows/Panther.App.Windows.csproj
+  Configuration: Release
+
+jobs:
+  package:
+    # Panther.Core.Audio only ships a prebuilt native miniaudio.dll for win-x64,
+    # so x86/ARM64 packages aren't buildable yet.
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Restore
+        run: dotnet restore $env:Project_Path -p:Platform=x64
+
+      - name: Decode the pfx
+        run: |
+          $pfxCertByte = [System.Convert]::FromBase64String("${{ secrets.BASE64_ENCODED_PFX }}")
+          [IO.File]::WriteAllBytes("$env:RUNNER_TEMP\SigningCertificate.pfx", $pfxCertByte)
+
+      # PublishReadyToRun needs a restored RID-specific runtime pack; the restore above
+      # doesn't pin one, so disable it here (same issue as in ci.yml's build-test job).
+      - name: Create the app package
+        run: >
+          dotnet build $env:Project_Path
+          -c $env:Configuration
+          --no-restore
+          -p:Platform=x64
+          -p:PublishReadyToRun=false
+          -p:UapAppxPackageBuildMode=SideloadOnly
+          -p:AppxBundle=Never
+          -p:AppxPackageDir="$env:GITHUB_WORKSPACE\Packages\"
+          -p:GenerateAppxPackageOnBuild=true
+          -p:PackageCertificateKeyFile="$env:RUNNER_TEMP\SigningCertificate.pfx"
+
+      - name: Remove the pfx
+        if: always()
+        run: Remove-Item -Path "$env:RUNNER_TEMP\SigningCertificate.pfx" -ErrorAction SilentlyContinue
+
+      - name: Upload MSIX package
+        uses: actions/upload-artifact@v4
+        with:
+          name: MSIX-Package-x64
+          path: Packages

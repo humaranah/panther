@@ -36,8 +36,11 @@ jobs:
       - name: Restore
         run: dotnet restore panther.slnx
 
+      # PublishReadyToRun is off for Debug but on for Release in the WinUI projects, which
+      # needs a restored RID-specific runtime pack. The restore above doesn't pin a RID, so
+      # disable it here rather than complicate restore just to compile-and-test in CI.
       - name: Build
-        run: dotnet build panther.slnx -c Release --no-restore
+        run: dotnet build panther.slnx -c Release --no-restore -p:PublishReadyToRun=false
 
       - name: Install dotnet-coverage
         run: dotnet tool install --global dotnet-coverage
